@@ -128,5 +128,5 @@ with open('data/all_texts_w_sensorimotor.json', 'w') as f:
     json.dump(df.to_dict(), f)
     
 # %%
-print('All done')
+print('All done!')
 # %%
