@@ -27,10 +27,10 @@ mean_cols
 # we might not want all the sensorimotor values, so we filter them out
 filtered_cols = [#'Auditory.mean',
  #'Gustatory.mean',
- 'Haptic.mean']
+ 'Haptic.mean',
  #,'Interoceptive.mean',
  #'Olfactory.mean',
- #'Visual.mean'] # 'Foot_leg.mean',
+ 'Visual.mean'] # 'Foot_leg.mean',
  #'Hand_arm.mean',
  #'Head.mean',
  #'Mouth.mean',
