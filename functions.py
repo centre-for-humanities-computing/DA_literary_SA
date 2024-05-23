@@ -248,7 +248,7 @@ def histplot_two_groups(implicit_df, explicit_df, measure_list, labels, l, h, sa
 #
 # Plotly visualisation of a correlation,
 # takes a first measure, a second measure and colors canonical works if canon == True
-def plotly_viz_correlation_improved(df, first, second, canon_col_name, canons=False, color_canon=False):
+def plotly_viz_correlation_improved(df, first, second, canon_col_name, w, h, canons=False, color_canon=False, save=False):
 
     # make the labels
     labels = {first:str(first).replace('_', ' ').lower(), second:str(second).replace('_', ' ').lower(),
@@ -323,13 +323,13 @@ def plotly_viz_correlation_improved(df, first, second, canon_col_name, canons=Fa
                         title=f"{title}<br><sup>{subtitle}</sup>", labels=labels, 
                         #color_discrete_sequence=px.colors.qualitative.Dark24, 
                         color='CANON_ALL', symbol="CANON_ALL", 
-                        width=1000, height=400, color_discrete_sequence=list(colorsId.values()))
+                        width=w, height=h, color_discrete_sequence=list(colorsId.values()))
         
     if color_canon == False:
         fig = px.scatter(dat, x=first, y=second, hover_data= {'word':True}, #hover_data=['TITLE_MODERN', 'AUTH_LAST_MODERN'], 
                     opacity=0.4, #marginal_x="histogram", #marginal_y="histogram", 
                     title=title, labels=labels, 
-                    width=1000, height=400, color_discrete_sequence=list(colorsId.values()))#,color_discrete_sequence=px.colors.qualitative.Dark24)
+                    width=w, height=h, color_discrete_sequence=list(colorsId.values()))#,color_discrete_sequence=px.colors.qualitative.Dark24)
 
     # layout
     fig.update_layout(
@@ -346,5 +346,62 @@ def plotly_viz_correlation_improved(df, first, second, canon_col_name, canons=Fa
 
     fig.show()
 
+    if save == True:
+        if os.path.exists('figures') == True:
+            fig.write_html(f'figures/{first}_{second}_scatterplot.html')
+        else:
+            print('Please create a folder called figures in the directory where you want to save the plots')
+
     return fig
+
+
+
+# Adding plotting scatteplots function
+def plot_scatters(df, scores_list, var, color, w, h, hue=False, remove_outliers=False, outlier_percentile=100, show_corr_values=False):
+    num_plots = len(scores_list)
+    num_rows = 1
+    num_cols = num_plots // num_rows
+
+    labels = [x.replace('_', ' ').lower() for x in scores_list]
+
+    fig, axes_list = plt.subplots(num_rows, num_cols, figsize=(w, h))
+    axes_list = axes_list
+
+    if hue == None:
+        hue = 'False'
+
+    for index, score in enumerate(scores_list):
+        df = df.loc[df[score].notnull()]
+
+        if remove_outliers == True:
+            percentile = np.percentile(df[score], outlier_percentile)
+            df = df.loc[df[score] <= percentile]
+        
+        sns.scatterplot(data=df, x=var, y=score, ax=axes_list[index],
+                        color=color, hue = hue, s= 35, alpha= 0.3, palette='rocket')
+            
+        # I want to add the spearman corr as title of each sublot
+        if show_corr_values == True:
+            
+            check = df.loc[df[var].notnull()]
+
+            correlation = stats.spearmanr(check[var], check[score])
+            corr_value = round(correlation[0], 3)
+
+            if correlation[1] < 0.01:
+                axes_list[index].set_title(f"Spearm. coef: {corr_value}, p<0.01", fontsize=15)
+            if correlation[1] >= 0.01:
+                axes_list[index].set_title(f"Spearm. coef: {corr_value}, OBS: p>0.01", fontsize=15)
+
+            print(f'pval_{score}', correlation[1])
+
+        axes_list[index].set_ylabel(labels[index], fontsize=20)
+        axes_list[index].set_xlabel(var.replace('_', ' ').lower(), fontsize=20)
+        #axes_list[index].set_ylim(bottom=0)
+
+        fig.tight_layout(pad=1)
+
+    print("mæhmæhmnæh")
+
+    plt.show()
 

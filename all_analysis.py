@@ -37,6 +37,10 @@ with open('data/all_texts_w_sensorimotor.json', 'r') as f:
 df = pd.DataFrame.from_dict(all_data)
 df.head()
 # %%
+
+df.loc[df['id'].istype(int)]
+
+# %%
 # GROUPING
 filtered = df.loc[(df['HUMAN'] <= 5) | (df['HUMAN'] >= 6)].reset_index(drop=False)
 print('filtered:', len(filtered))
@@ -101,6 +105,7 @@ labels = ['avg_valence', 'avg_arousal', 'avg_dominance', 'avg_concreteness', 'av
 
 ced_plot(implicit_df, explicit_df, measure_list, labels, save=True, save_title='Danish_texts')
 
+# 
 # %%
 
 histplot_two_groups(implicit_df, explicit_df, measure_list, labels, l=28, h=5, save=True, save_title='Danish_texts')

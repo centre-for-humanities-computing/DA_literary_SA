@@ -25,17 +25,28 @@ mean_cols
 
 # %%
 # we might not want all the sensorimotor values, so we filter them out
-filtered_cols = [#'Auditory.mean',
- #'Gustatory.mean',
+filtered_cols = ['Auditory.mean',
+ 'Gustatory.mean',
  'Haptic.mean',
- #,'Interoceptive.mean',
- #'Olfactory.mean',
- 'Visual.mean'] # 'Foot_leg.mean',
- #'Hand_arm.mean',
- #'Head.mean',
- #'Mouth.mean',
- #'Torso.mean'
+ 'Interoceptive.mean',
+ 'Olfactory.mean',
+ 'Visual.mean']
+#  'Foot_leg.mean',
+#  'Hand_arm.mean',
+#  'Head.mean',
+#  'Mouth.mean',
+#  'Torso.mean']
 
+# 5%
+sensori_dict = {}
+for i, r in sensori.iterrows():
+    values_all_sens = []
+    for col in filtered_cols:
+        
+        lex = r['Word'].lower()
+        lem_sens = lmtzr.lemmatize(lex)
+        values_all_sens.append(r[col])
+    sensori_dict[lem_sens] = values_all_sens
 # %%
 
 sensori_dict = {}
@@ -45,13 +56,18 @@ for i,r in sensori.iterrows():
     values_all_sens = r[filtered_cols].values
     sensori_dict[str(lem_sens)] = values_all_sens.sum()
 
+# normalize for sentence length
+# take them individually to compare
+
 # so here we are just getting the mean value of all the sensorimotor values for each lemma
 
 # %%
 # try out the sensori dict
+print(filtered_cols)
 examples = ['kiss', 'attack', 'hit', 'thought', 'wisdom', 'dog', 'ice', 'unless', 'moral', 'eh', 'honey']
 for ex in examples:
     print(ex, sensori_dict[ex])
+
 
 # ok, let's save this as a dictionary
 with open('resources/sensorimotor_norms_dict.json', 'w') as f:
@@ -80,6 +96,8 @@ sns.set(style="whitegrid")
 sns.scatterplot(data=overlap, x='concreteness', y='sensorimotor', size=10, alpha=0.4)
 
 
+# %%
+dict_overlap
 # %%
 from functions import plotly_viz_correlation_improved
 
