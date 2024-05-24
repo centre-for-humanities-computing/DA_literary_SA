@@ -1,4 +1,4 @@
-# UTILS for the Danish HCA SA study
+# UTILS for the concreteness/SA study
 
 import os
 
@@ -9,7 +9,6 @@ from importlib import reload
 import numpy as np
 
 #nltk.download('punkt')
-
 
 # plot
 import seaborn as sns
@@ -30,4 +29,11 @@ from scipy import stats
 from scipy.stats import norm
 from scipy.stats import spearmanr
 
+# Roberta
+#!pip install sentencepiece
+#!pip install protobuf
+from transformers import pipeline
 
+# VADER
+import nltk
+from nltk.sentiment.vader import SentimentIntensityAnalyzer

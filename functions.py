@@ -12,13 +12,16 @@ from utils import *
 
 
 # normalization
-def normalize(ts, scl01 = False):
-    ts01 = (ts - np.min(ts)) / (np.max(ts) - np.min(ts))
-    ts11 = 2 * ts01 -1
-    if scl01:
-        return ts01
+def normalize(ts, scale_zero_to_ten=False):
+    ts_min = np.min(ts)
+    ts_max = np.max(ts)
+    ts01 = (ts - ts_min) / (ts_max - ts_min)  # Normalizes to 0-1 scale
+    ts10 = ts01 * 10  # Converts to 0-10 scale
+    
+    if scale_zero_to_ten:
+        return ts10
     else:
-        return ts11
+        return ts01
 
 # function to get mean of list of floats
 def mean_when_floated(x):
@@ -211,16 +214,19 @@ def ced_plot(implicit_df, explicit_df, measure_list, labels, save=False, save_ti
 
 
 # Histplot, two groups
-def histplot_two_groups(implicit_df, explicit_df, measure_list, labels, l, h, save=False, save_title=False):
+def histplot_two_groups(implicit_df, explicit_df, measure_list, labels, l, h, density=False, save=False, save_title=False):
 
     sns.set_theme(style="whitegrid", font_scale=1.5)
     fig, axes_list = plt.subplots(1, len(measure_list), figsize=(l, h), dpi=300)#, sharey=True)
     
     for i, measure in enumerate(measure_list):
         ax = axes_list.flat[i]
-
-        sns.histplot(data=implicit_df, x=measure, ax=ax, color='blue', kde=True, label='implicit')
-        sns.histplot(data=explicit_df, x=measure, ax=ax, color='red', kde=True, label='explicit')
+        if density == True:
+            sns.histplot(data=implicit_df, x=measure, ax=ax, color='blue', kde=True, label='implicit', stat='density')
+            sns.histplot(data=explicit_df, x=measure, ax=ax, color='red', kde=True, label='explicit', stat='density')
+        else:
+            sns.histplot(data=implicit_df, x=measure, ax=ax, color='blue', kde=True, label='implicit')
+            sns.histplot(data=explicit_df, x=measure, ax=ax, color='red', kde=True, label='explicit')
 
         ax.set_xlabel(f'{labels[i]}')
 
@@ -350,7 +356,7 @@ def plotly_viz_correlation_improved(df, first, second, canon_col_name, w, h, can
         if os.path.exists('figures') == True:
             fig.write_html(f'figures/{first}_{second}_scatterplot.html')
         else:
-            print('Please create a folder called figures in the directory where you want to save the plots')
+            print('Sucker. Please create a folder called figures in the directory where you want to save the plots')
 
     return fig
 
@@ -405,3 +411,49 @@ def plot_scatters(df, scores_list, var, color, w, h, hue=False, remove_outliers=
 
     plt.show()
 
+# For SENTIMENT ANALYSIS
+
+# to convert transformer scores to the same scale as the dictionary-based scores
+def conv_scores(lab, sco, spec_lab): #insert exact labelnames in order positive, negative og as positive, neutral, negative
+    
+    converted_scores = []
+    
+    if len(spec_lab) == 2:
+        spec_lab[0] = "positive"
+        spec_lab[1] = "negative"
+
+        for i in range(0, len(lab)):
+            if lab[i] == "positive":
+                converted_scores.append(sco[i])
+            else:
+                converted_scores.append(-sco[i])
+            
+    if len(spec_lab) == 3:
+        spec_lab[0] = "positive"
+        spec_lab[1] = "neutral"
+        spec_lab[2] = "negative"
+        
+        for i in range(0, len(lab)):
+            if lab[i] == "positive":
+                converted_scores.append(sco[i])
+            elif lab[i] == "neutral":
+                converted_scores.append(0)
+            else:
+                converted_scores.append(-sco[i])
+    
+    return converted_scores
+
+
+# and VADER 
+sid =  SentimentIntensityAnalyzer()
+
+def sentimarc_vader(text, untokd=True):
+    if untokd:
+        sents = nltk.sent_tokenize(text)
+        print(len(sents))
+    else: sents = text
+    arc=[]
+    for sentence in sents:
+        compound_pol = sid.polarity_scores(sentence)['compound']
+        arc.append(compound_pol)
+    return arc

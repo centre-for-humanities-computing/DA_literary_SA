@@ -49,12 +49,12 @@ for i, r in sensori.iterrows():
     sensori_dict[lem_sens] = values_all_sens
 # %%
 
-sensori_dict = {}
-for i,r in sensori.iterrows():
-    lex = r['Word'].lower()
-    lem_sens = lmtzr.lemmatize(lex)
-    values_all_sens = r[filtered_cols].values
-    sensori_dict[str(lem_sens)] = values_all_sens.sum()
+# sensori_dict = {}
+# for i,r in sensori.iterrows():
+#     lex = r['Word'].lower()
+#     lem_sens = lmtzr.lemmatize(lex)
+#     values_all_sens = r[filtered_cols].values
+#     sensori_dict[str(lem_sens)] = values_all_sens.sum()
 
 # normalize for sentence length
 # take them individually to compare
@@ -74,8 +74,6 @@ with open('resources/sensorimotor_norms_dict.json', 'w') as f:
     json.dump(sensori_dict, f)
 
 
-
-
 # %%
 # let's see the correlation between the sensorimotor values and the concreteness values
 with open("resources/concreteness_brysbaert.json", 'r') as f:
@@ -87,23 +85,37 @@ dict_overlap = {}
 for word in diconc.keys():
     if word in sensori_dict.keys():
         #print(word, diconc[word], sensori_dict[word])
-        dict_overlap[word] = [diconc[word], sensori_dict[word]]
-
-overlap = pd.DataFrame.from_dict(dict_overlap, orient='index', columns=['concreteness', 'sensorimotor']).reset_index()
-overlap['word'] = overlap['index']
-
-sns.set(style="whitegrid")
-sns.scatterplot(data=overlap, x='concreteness', y='sensorimotor', size=10, alpha=0.4)
-
+        #dict_overlap[word] = [diconc[word], sensori_dict[word]]
+        listed_sens = list(sensori_dict[word])
+        listed_sens.append(diconc[word])
+        dict_overlap[word] = listed_sens
 
 # %%
 dict_overlap
 # %%
-from functions import plotly_viz_correlation_improved
 
-x = plotly_viz_correlation_improved(overlap, 'concreteness', 'sensorimotor', canon_col_name='', canons=False, color_canon=False)
+#overlap = pd.DataFrame.from_dict(dict_overlap, orient='index', columns=['concreteness', 'sensorimotor']).reset_index()
+overlap = pd.DataFrame.from_dict(dict_overlap, orient='index', columns=['Auditory.mean', 'Gustatory.mean', 'Haptic.mean', 'Interoceptive.mean', 'Olfactory.mean', 'Visual.mean', 'concreteness']).reset_index()
+overlap['word'] = overlap['index']
+
+# sns.set(style="whitegrid")
+# for col in filtered_cols:
+#     plt.figure(figsize=(10, 6))
+#     sns.scatterplot(data=overlap, x=col, y='concreteness', size=10, alpha=0.4)
+#     plt.show()
+#sns.scatterplot(data=overlap, x='concreteness', y='sensorimotor', size=10, alpha=0.4)
 
 # %%
+# make scatter subplots
+plot_scatters(overlap, filtered_cols, 'concreteness', 'lightseagreen', 40, 6, hue=False, remove_outliers=False, outlier_percentile=100, show_corr_values=True)
+
+# %%
+from functions import plotly_viz_correlation_improved
+
+x = plotly_viz_correlation_improved(overlap, 'concreteness', 'Visual.mean', w=1000, h=650, canon_col_name='', canons=False, color_canon=False, save=True)
+
+# %%
+x = plotly_viz_correlation_improved(overlap, 'concreteness', 'Gustatory.mean', w=1000, h=650, canon_col_name='', canons=False, color_canon=False, save=True)
 
 
 # %%
