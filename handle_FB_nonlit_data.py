@@ -27,6 +27,7 @@ fb_dat['textlen'] = lens
 fb_dat = fb_dat.loc[fb_dat['textlen'] < 514]
 len(fb_dat)
 
+
 # %%
 # the json is structured so that the word is the key, the value the concreteness score
 with open("resources/concreteness_brysbaert.json", 'r') as f:
