@@ -254,7 +254,7 @@ def histplot_two_groups(implicit_df, explicit_df, measure_list, labels, l, h, de
 #
 # Plotly visualisation of a correlation,
 # takes a first measure, a second measure and colors canonical works if canon == True
-def plotly_viz_correlation_improved(df, first, second, canon_col_name, w, h, canons=False, color_canon=False, save=False):
+def plotly_viz_correlation_improved(df, first, second, canon_col_name, w, h, hoverdata_column, canons=False, color_canon=False, save=False):
 
     # make the labels
     labels = {first:str(first).replace('_', ' ').lower(), second:str(second).replace('_', ' ').lower(),
@@ -332,7 +332,7 @@ def plotly_viz_correlation_improved(df, first, second, canon_col_name, w, h, can
                         width=w, height=h, color_discrete_sequence=list(colorsId.values()))
         
     if color_canon == False:
-        fig = px.scatter(dat, x=first, y=second, hover_data= {'word':True}, #hover_data=['TITLE_MODERN', 'AUTH_LAST_MODERN'], 
+        fig = px.scatter(dat, x=first, y=second, hover_data= {hoverdata_column:True}, #hover_data=['TITLE_MODERN', 'AUTH_LAST_MODERN'], 
                     opacity=0.4, #marginal_x="histogram", #marginal_y="histogram", 
                     title=title, labels=labels, 
                     width=w, height=h, color_discrete_sequence=list(colorsId.values()))#,color_discrete_sequence=px.colors.qualitative.Dark24)
@@ -399,7 +399,7 @@ def plot_scatters(df, scores_list, var, color, w, h, hue=False, remove_outliers=
             if correlation[1] >= 0.01:
                 axes_list[index].set_title(f"Spearm. coef: {corr_value}, OBS: p>0.01", fontsize=15)
 
-            print(f'pval_{score}', correlation[1])
+            print(f'corr_spearman of {score} & {var}:', round(correlation[0], 3), 'pval:', correlation[1])
 
         axes_list[index].set_ylabel(labels[index], fontsize=20)
         axes_list[index].set_xlabel(var.replace('_', ' ').lower(), fontsize=20)
