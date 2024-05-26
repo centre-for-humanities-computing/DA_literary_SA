@@ -214,7 +214,7 @@ def ced_plot(implicit_df, explicit_df, measure_list, labels, save=False, save_ti
 
 
 # Histplot, two groups
-def histplot_two_groups(implicit_df, explicit_df, measure_list, labels, l, h, density=False, save=False, save_title=False):
+def histplot_two_groups(implicit_df, explicit_df, measure_list, labels, l, h, title_plot, density=False, save=False, save_title=False):
 
     sns.set_theme(style="whitegrid", font_scale=1.5)
     fig, axes_list = plt.subplots(1, len(measure_list), figsize=(l, h), dpi=300)#, sharey=True)
@@ -236,6 +236,10 @@ def histplot_two_groups(implicit_df, explicit_df, measure_list, labels, l, h, de
     axes_list[0].legend()  # Adding legend to the last subplot
 
     plt.tight_layout()
+    
+    # set title
+    if title_plot != None:
+        fig.suptitle(title_plot, fontsize=20)
 
     if save == True:
             # if save title exists
