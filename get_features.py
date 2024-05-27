@@ -1,15 +1,16 @@
 # %%
-import json
-import pandas as pd
-import nltk
-import numpy as np
+
+from utils import *
+from functions import *
+
 from nltk.stem import WordNetLemmatizer
 import pickle as pkl
 import os
+
 # %%
 # set input path for data
-input_path = 'annotation/plath_pascale_ALL.json' #'data/emobank_w_features_and_cats.json' #'data/FB_data_w_features.json' 
-title = 'plath'
+input_path = 'data/EmoTales/emoTales.json' #'data/emobank_w_features_and_cats.json' #'data/FB_data_w_features.json' 
+title = 'EmoTales'
 print(title)
 # texts should contain sentences and SA scores
 
@@ -17,9 +18,11 @@ print(title)
 with open(input_path, 'r') as f:
     all_data = json.load(f)
 
-df = pd.DataFrame.from_dict(all_data, orient='index')
-df.columns = ['ANNOTATOR_1', 'SENTENCE']
+df = pd.DataFrame.from_dict(all_data)
+#df.columns = ['ANNOTATOR_1', 'SENTENCE']
+print(len(df))
 df.head()
+
 # %%
 # CONCRETENESS RUN
 # Loading concreteness lexicon
@@ -149,8 +152,62 @@ df.head()
 df = df.copy().reset_index(drop=True)
 print(len(df))
 df.head()
+
+# %%
+# now we want to get the VADER and roberta scores for these texts
+
+xlm_model = pipeline(model="cardiffnlp/twitter-xlm-roberta-base-sentiment")
+
+# %%
+# Ensure text is strings
+df['SENTENCE'] = df['SENTENCE'].astype(str)
+
+xlm_labels = []
+xlm_scores = []
+
+for s in df['SENTENCE']:
+    # Join to string if list
+    if isinstance(s, list):
+        s = " ".join(s)
+    # get sent-label & confidence to transform to continuous
+    sent = xlm_model(s)
+    xlm_labels.append(sent[0].get("label"))
+    xlm_scores.append(sent[0].get("score"))
+
+# function defined in functions to transform score to continuous
+xlm_converted_scores = conv_scores(xlm_labels, xlm_scores, ["positive", "neutral", "negative"])
+
+# %%
+df["tr_xlm_roberta"] = xlm_converted_scores
+
+# %% 
+# and then we also need the VADER
+
+# %%
+
+sid =  SentimentIntensityAnalyzer()
+
+def sentimarc_vader(text, untokd=True):
+    if untokd:
+        sents = nltk.sent_tokenize(text)
+        print(len(sents))
+    else: sents = text
+    arc=[]
+    for sentence in sents:
+        compound_pol = sid.polarity_scores(sentence)['compound']
+        arc.append(compound_pol)
+    return arc
+
+# %%
+# get the VADER scores
+vader_scores = sentimarc_vader(df['SENTENCE'].values, untokd=False)
+df['vader'] = vader_scores
+df.head()
 # %%
 # dump to json
 with open(f'data/{title}_w_features.json', 'w') as f:
     json.dump(df.to_dict(), f)
 # %%
+
+
+

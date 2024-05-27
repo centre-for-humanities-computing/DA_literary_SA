@@ -6,7 +6,7 @@ from functions import *
 # set out path for visualizations
 output_path = 'figures/'
 # set input path for data
-input_path =  'data/emobank_w_features_and_cats.json' #'data/FB_data_w_features.json' # 'data/all_texts_w_sensorimotor.json'
+input_path =  'data/EmoTales_w_features.json' #'data/FB_data_w_features.json' # 'data/all_texts_w_sensorimotor.json'
 
 # set save-title
 save_title = input_path.split('/')[-1].split('.')[0]
@@ -31,7 +31,6 @@ data = pd.DataFrame.from_dict(all_data)
 data['SENTENCE_TOKENNIZED'] = data['SENTENCE'].apply(lambda x: nltk.wordpunct_tokenize(x.lower()))
 lens = data['SENTENCE_TOKENNIZED'].apply(lambda x: len(x))
 data['SENTENCE_LENGTH'] = lens
-data['CATEGORY'] = data['category']
 
 data.tail()
 
@@ -121,18 +120,28 @@ sensorimotor = ['Auditory.mean', 'Gustatory.mean', 'Haptic.mean', 'Interoceptive
 ced_plot(implicit_df, explicit_df, measure_list, labels, save=True, save_title=save_title)
 ced_plot(implicit_df, explicit_df, sensorimotor, sensorimotor, save=True, save_title=save_title + '_sensorimotor')
 # 
-# %%
 
+# %%
 histplot_two_groups(implicit_df, explicit_df, measure_list, labels, l=28, h=5, title_plot='All texts', density=True, save=True, save_title=save_title)
 
 if 'CATEGORY' in df.columns:
     categories = df['CATEGORY'].unique()
-
     for cat in categories:
         implicit_df_cat = implicit_df.loc[implicit_df['CATEGORY'] == cat]
         explicit_df_cat = explicit_df.loc[explicit_df['CATEGORY'] == cat]
         print(f'GROUPS: len implicit in {cat}:', len(implicit_df_cat), 'len explicit:', len(explicit_df_cat))
         histplot_two_groups(implicit_df_cat, explicit_df_cat, measure_list, labels, l=28, h=5, title_plot=cat, density=True, save=True, save_title=save_title + '_' + cat)
+
+# elif 'ID' in df.columns:
+#     df['CATEGORY'] = df['ID']
+#     categories = df['ID'].unique()
+
+#     for cat in categories:
+#         implicit_df_cat = implicit_df.loc[implicit_df['ID'] == cat]
+#         explicit_df_cat = explicit_df.loc[explicit_df['ID'] == cat]
+#         print(f'GROUPS: len implicit in {cat}:', len(implicit_df_cat), 'len explicit:', len(explicit_df_cat))
+#         histplot_two_groups(implicit_df_cat, explicit_df_cat, measure_list, labels, l=28, h=5, title_plot=cat, density=True, save=True, save_title=save_title + '_' + cat)
+
 
 # %%
 # and for the sensorimotor values
