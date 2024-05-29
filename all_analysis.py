@@ -6,7 +6,7 @@ from functions import *
 # set out path for visualizations
 output_path = 'figures/'
 # set input path for data
-input_path =  'data/EmoTales_w_features.json' #'data/FB_data_w_features.json' # 'data/all_texts_w_sensorimotor.json'
+input_path =  'data/FB_data_w_features.json'#'data/all_texts_w_sensorimotor.json'#'data/EmoTales_w_features.json'#'data/emobank_w_features_and_cats.json'  #'data/FB_data_w_features.json'
 
 # set save-title
 save_title = input_path.split('/')[-1].split('.')[0]
@@ -35,6 +35,8 @@ data['SENTENCE_LENGTH'] = lens
 data.tail()
 
 # %%
+data.columns
+# %%
 # try filtering out where sentences are too short
 # we want to tokenize first
 if filter == True:
@@ -42,7 +44,7 @@ if filter == True:
     print('len filtered data', len(df))
 else:
     df = data
-    print('len df:', len(df))
+    print('len df, unfiltered:', len(df))
 
 # %%
 # we want to normalize the dictionary scores before using it to filter out the groups, but check that its needed
@@ -50,30 +52,48 @@ else:
 # and the human values if needed
 
 # adjust huamn range if using emobank
-if save_title == 'emobank_w_features_and_cats':
+data_to_normalize = ['emobank_w_features_and_cats','EmoTales_w_features', 'FB_data_w_features']
+
+if save_title in data_to_normalize:
     df['HUMAN'] = normalize(df['HUMAN'], scale_zero_to_ten=True)
     df.head()
+
+    print(f'{save_title} avg valence scores was normalized 0-10')
 # I'm not too happy about this normalization of human scores business
 
 # %%
 # GROUPING
-filtered = df.loc[(df['HUMAN'] <= 5) | (df['HUMAN'] >= 6)].reset_index(drop=False)
+filtered = df.loc[(df['HUMAN'] <= 5) | (df['HUMAN'] > 6)].reset_index(drop=False)
 print('filtered:', len(filtered))
 
 threshold = 0.1
-dictionary_used = 'sentida_MODERN'
+# we want to use VADER for english, sentida for danish texts?
+# we need to decide whether we want to filter on both dict and roberta...
+#dictionary_used = 'sentida_MODERN'#'vader'
 
 # implicit group
-implicit_df = filtered.loc[(abs(filtered['tr_xlm_roberta']) <= threshold)] #& (abs(filtered[dictionary_used]) <= threshold)]
+implicit_df = filtered.loc[(abs(filtered['tr_xlm_roberta']) <= threshold)]# & (abs(filtered[dictionary_used]) <= threshold)]
 print('len_IMplicit_group:', len(implicit_df))
 
 # explicit group
-explicit_df = filtered.loc[(abs(filtered['tr_xlm_roberta']) >= threshold)] #& (abs(filtered[dictionary_used]) > threshold)] # & (abs(filtered['arc_sentida']) > threshold)]#  # difference in concreteness is bigger if i do | instead of & between the last pair, but explicit group is then also bigger
+explicit_df = filtered.loc[(abs(filtered['tr_xlm_roberta']) > threshold)]# & (abs(filtered[dictionary_used]) > threshold)] # & (abs(filtered['arc_sentida']) > threshold)]#  # difference in concreteness is bigger if i do | instead of & between the last pair, but explicit group is then also bigger
 print('len_EXplicit_group:', len(explicit_df))
 
 # %%
 # statistics
 measure_list = ['avg_valence', 'avg_arousal', 'avg_dominance', 'avg_concreteness']#, 'avg_sensorimotor']
+
+# if it is EmoTales, we also have annotations for valence, so use it
+if save_title == 'EmoTales_w_features':
+    measure_list = ['avg_valence', 'avg_arousal', 'avg_dominance', 'avg_concreteness', 'avg_action', 'avg_power']
+    print('EmoTales avg POW & ACT is also used')
+
+# and use V, D if it is EmoBank
+if save_title == 'emobank_w_features_and_cats':
+    measure_list = ['avg_valence', 'avg_arousal', 'avg_dominance', 'avg_concreteness', 'avg_harousal', 'avg_hdominance']
+    print('EmoBank avg human dominance & arousal is also used')
+
+print('measures considered:', measure_list)
 
 ustats = []
 pvals = []
@@ -103,7 +123,6 @@ df2 = implicit_df.loc[implicit_df['avg_valence'].notnull()]
 both_groups = pd.concat([df1, df2])
 
 
-measure_list = ['avg_valence', 'avg_arousal', 'avg_dominance', 'avg_concreteness']#, 'avg_sensorimotor']
 sns.set_style("whitegrid")
 x = pairwise_boxplots_canon(both_groups, measure_list, category='GROUP', category_labels=['implicit', 'explicit'], 
                             plottitle=save_title, outlier_percentile=100, remove_outliers=False, h=8, w=11, save=True)
@@ -113,24 +132,27 @@ x = pairwise_boxplots_canon(both_groups, measure_list, category='GROUP', categor
 
 # plot the CEDs and do the kolmogorov-smirnov test
 
-labels = ['avg_valence', 'avg_arousal', 'avg_dominance', 'avg_concreteness']#, 'avg_sensorimotor']
-measure_list = ['avg_valence', 'avg_arousal', 'avg_dominance', 'avg_concreteness']#, 'avg_sensorimotor']
 sensorimotor = ['Auditory.mean', 'Gustatory.mean', 'Haptic.mean', 'Interoceptive.mean', 'Olfactory.mean', 'Visual.mean']
 
-ced_plot(implicit_df, explicit_df, measure_list, labels, save=True, save_title=save_title)
+ced_plot(implicit_df, explicit_df, measure_list, measure_list, save=True, save_title=save_title)
 ced_plot(implicit_df, explicit_df, sensorimotor, sensorimotor, save=True, save_title=save_title + '_sensorimotor')
 # 
 
 # %%
-histplot_two_groups(implicit_df, explicit_df, measure_list, labels, l=28, h=5, title_plot='All texts', density=True, save=True, save_title=save_title)
+print('whole corpus')
+histplot_two_groups(implicit_df, explicit_df, measure_list, measure_list, l=28, h=5, title_plot='All texts', density=True, save=True, save_title=save_title)
 
-if 'CATEGORY' in df.columns:
-    categories = df['CATEGORY'].unique()
+# if there are categories in the data, we want to show each category seperately.
+# categories are in differently named columns, so we use a map
+column_map = {'emobank_w_features_and_cats': 'category', 'EmoTales_w_features':'ID', 'all_texts_w_sensorimotor':'CATEGORY'}
+
+if save_title in column_map.keys():
+    categories = df[column_map[save_title]].unique()
     for cat in categories:
-        implicit_df_cat = implicit_df.loc[implicit_df['CATEGORY'] == cat]
-        explicit_df_cat = explicit_df.loc[explicit_df['CATEGORY'] == cat]
-        print(f'GROUPS: len implicit in {cat}:', len(implicit_df_cat), 'len explicit:', len(explicit_df_cat))
-        histplot_two_groups(implicit_df_cat, explicit_df_cat, measure_list, labels, l=28, h=5, title_plot=cat, density=True, save=True, save_title=save_title + '_' + cat)
+        implicit_df_cat = implicit_df.loc[implicit_df[column_map[save_title]] == cat]
+        explicit_df_cat = explicit_df.loc[explicit_df[column_map[save_title]] == cat]
+        print(f'{cat}: GROUPS: len implicit:', len(implicit_df_cat), 'len explicit:', len(explicit_df_cat))
+        histplot_two_groups(implicit_df_cat, explicit_df_cat, measure_list, measure_list, l=28, h=5, title_plot=cat, density=True, save=True, save_title=save_title + '_' + cat)
 
 # elif 'ID' in df.columns:
 #     df['CATEGORY'] = df['ID']
@@ -142,11 +164,10 @@ if 'CATEGORY' in df.columns:
 #         print(f'GROUPS: len implicit in {cat}:', len(implicit_df_cat), 'len explicit:', len(explicit_df_cat))
 #         histplot_two_groups(implicit_df_cat, explicit_df_cat, measure_list, labels, l=28, h=5, title_plot=cat, density=True, save=True, save_title=save_title + '_' + cat)
 
-
 # %%
 # and for the sensorimotor values
-if 'CATEGORY' in df.columns:
-    categories = df['CATEGORY'].unique()
+if save_title in column_map.keys():
+    categories = df[column_map[save_title]].unique()
 
     for cat in categories:
         implicit_df_cat = implicit_df.loc[implicit_df['CATEGORY'] == cat]
@@ -166,14 +187,33 @@ sns.histplot(data=explicit_df, x='avg_concreteness', color='red', kde=True, stat
 df['HUMAN_NORM'] = normalize(df['HUMAN'], scale_zero_to_ten=False)
 df['ROBERTA_HUMAN_DIFF'] = abs(abs(df['HUMAN_NORM']) - abs(df['tr_xlm_roberta']))
 
-x = plotly_viz_correlation_improved(df, 'avg_concreteness', 'ROBERTA_HUMAN_DIFF', w=800, h=650, hoverdata_column='CATEGORY', canon_col_name='', canons=False, color_canon=False, save=False)
+print('All genres -- arousal corr w. disagreement')
+x = plotly_viz_correlation_improved(df, 'avg_arousal', 'ROBERTA_HUMAN_DIFF', w=800, h=350, hoverdata_column='SENTENCE', canon_col_name='', canons=False, color_canon=False, save=False)
+print('All genres -- concretenes corr w. disagreement')
+x = plotly_viz_correlation_improved(df, 'avg_concreteness', 'ROBERTA_HUMAN_DIFF', w=800, h=350, hoverdata_column='SENTENCE', canon_col_name='', canons=False, color_canon=False, save=False)
 
+if save_title in column_map.keys():
+    categories = df[column_map[save_title]].unique()
+
+    for cat in categories:
+    # we want to check the corr between disagreement and sentence length
+        cat_df = df.loc[df[column_map[save_title]] == cat]
+        print(cat, 'arousal')
+        x = plotly_viz_correlation_improved(cat_df, 'avg_arousal', 'ROBERTA_HUMAN_DIFF', w=800, h=350, hoverdata_column='SENTENCE', canon_col_name='', canons=False, color_canon=False, save=False)
+        print(cat, 'concreteness')
+        x = plotly_viz_correlation_improved(cat_df, 'avg_concreteness', 'ROBERTA_HUMAN_DIFF', w=800, h=350, hoverdata_column='SENTENCE', canon_col_name='', canons=False, color_canon=False, save=False)
+
+
+
+# %%
+# Some experiments of filtering for various thresholds of sentence length
+#
 # %%
 # we want to try and see if the correlation improves at differente thresholds of sentence length
 thresholds = [0, 5, 10, 15, 20, 25, 30, 35]
 scores_list = ['avg_arousal', 'avg_dominance', 'avg_concreteness']
 
-# going back to the original unfiltered dataframe, data
+# going back to the original (surely)unfiltered dataframe -- data
 data['HUMAN_NORM'] = normalize(data['HUMAN'], scale_zero_to_ten=False)
 data['ROBERTA_HUMAN_DIFF'] = abs(abs(data['HUMAN_NORM']) - abs(data['tr_xlm_roberta']))
 

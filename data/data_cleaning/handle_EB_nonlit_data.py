@@ -5,7 +5,7 @@ from functions import *
 
 # %%
 
-eb = pd.read_csv("/Users/au324704/Library/Mobile Documents/com~apple~CloudDocs/CHCAA/FABULANET/DA_literary_SA/data/emobank.csv", index_col=0).reset_index(drop=False)
+eb = pd.read_csv("data/emobank/emobank.csv", index_col=0).reset_index(drop=False)
 #eb = pd.read_csv("data/emobank_readers_scores.csv", index_col=0).reset_index(drop=False)
 # %%
 eb.head()
@@ -190,4 +190,23 @@ eb_dict = eb_df.to_dict(orient='records')
 with open('resources/emobank_w_features.json', 'w') as f:
     json.dump(eb_dict, f)
 
+# %%
+
+
+# with open('data/emobank_w_features_and_cats.json', 'r') as f:
+#     all_data = json.load(f)
+
+# df = pd.DataFrame.from_dict(all_data)
+
+# df.columns = ['HUMAN', 'avg_harousal', 'avg_hdominance', 'SENTENCE',
+#        'document', 'category', 'subcategory', 'avg_concreteness',
+#        'concreteness', 'avg_valence', 'avg_arousal', 'avg_dominance',
+#        'tr_xlm_roberta', 'vader', 'Auditory.mean', 'Gustatory.mean',
+#        'Haptic.mean', 'Interoceptive.mean', 'Olfactory.mean', 'Visual.mean']
+
+# df.head()
+# # %%
+# eb_dict = df.to_dict(orient='records')
+# with open('data/emobank_w_features_and_cats.json', 'w') as f:
+#     json.dump(eb_dict, f)
 # %%

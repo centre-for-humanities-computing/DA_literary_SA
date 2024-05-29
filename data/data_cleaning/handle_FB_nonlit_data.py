@@ -96,6 +96,12 @@ fb_dat.head()
 fb_dat['HUMAN'] = (fb_dat['Valence1'] + fb_dat['Valence2']) / 2
 sns.scatterplot(data=fb_dat, x='HUMAN', y='avg_valence', size=10, alpha=0.4)
 
+#%%
+
+fb_dat['harousal'] = (fb_dat['Arousal1'] + fb_dat['Arousal2']) / 2
+sns.scatterplot(data=fb_dat, x='harousal', y='avg_arousal', size=10, alpha=0.4)
+
+
 
 # %%
 # now we want to get the VADER and roberta scores for these texts
@@ -139,12 +145,12 @@ fb_dat.columns
 fb_dat.head()
 
 # %%
-fb_dat_df = fb_dat[['HUMAN', 'Valence1', 'Valence1', 'Arousal1', 'Arousal2', 'text', 'avg_concreteness', 'concreteness',
+fb_dat_df = fb_dat[['HUMAN', 'harousal', 'Valence1', 'Valence1', 'Arousal1', 'Arousal2', 'text', 'avg_concreteness', 'concreteness',
        'avg_valence', 'avg_arousal', 'avg_dominance', 'tr_xlm_roberta',
        'vader']]
 # %%
 # rename columns to match the other datasets
-fb_dat_df.columns = ['HUMAN', 'VALENCE_HUMAN_1_FB', 'VALENCE_HUMAN_2_FB', 'AROUSAL_HUMAN_1_FB', 'AROUSAL_HUMAN_2_FB', 'SENTENCE', 
+fb_dat_df.columns = ['HUMAN', 'harousal', 'VALENCE_HUMAN_1_FB', 'VALENCE_HUMAN_2_FB', 'AROUSAL_HUMAN_1_FB', 'AROUSAL_HUMAN_2_FB', 'SENTENCE', 
                      'avg_concreteness', 'concreteness', 'avg_valence', 'avg_arousal', 'avg_dominance', 'tr_xlm_roberta', 'vader']
 
 # %%
@@ -155,7 +161,7 @@ fb_dat_df.head()
 # Now we can save this to a dict and load it in the analysis script
 # dump to json
 # fb_dat_dict = fb_dat_df.to_dict(orient='records')
-# with open('resources/FB_data_w_features.json', 'w') as f:
+# with open('data/FB_data_w_features.json', 'w') as f:
 #     json.dump(fb_dat_dict, f)
 
 # %%

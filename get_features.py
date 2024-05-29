@@ -209,5 +209,8 @@ with open(f'data/{title}_w_features.json', 'w') as f:
     json.dump(df.to_dict(), f)
 # %%
 
+# open it again
+# just want to add averages of 'avg_power', 'avg_action'
 
-
+# question is whether they should be normalized
+# %%

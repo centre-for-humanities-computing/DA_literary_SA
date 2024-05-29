@@ -1,5 +1,7 @@
 # %%
 
+from utils import *
+from functions import *
 import json
 import pandas as pd
 
@@ -25,6 +27,27 @@ data['CATEGORY'].value_counts()
 data.columns
 
 len(data)
+
+# %% 
+# add vader to danish data
+
+sid =  SentimentIntensityAnalyzer()
+
+def sentimarc_vader(text, untokd=True):
+    if untokd:
+        sents = nltk.sent_tokenize(text)
+        print(len(sents))
+    else: sents = text
+    arc=[]
+    for sentence in sents:
+        compound_pol = sid.polarity_scores(sentence)['compound']
+        arc.append(compound_pol)
+    return arc
+
+vader_scores = sentimarc_vader(data['SENTENCE_ENGLISH'].values, untokd=False)
+data['vader'] = vader_scores
+data.head()
+
 
 
 # %% merge hemingway and hymns/hca data
@@ -59,7 +82,9 @@ merged_dict = merged.to_dict()
 len(merged['id'])
 
 # %%
+merged.columns
+# %%
 # to json
-# with open('data/all_texts_w_sensorimotor.json', 'w') as f:
-#     json.dump(merged_dict, f)
+with open('data/all_texts_w_sensorimotor.json', 'w') as f:
+    json.dump(merged_dict, f)
 # %%

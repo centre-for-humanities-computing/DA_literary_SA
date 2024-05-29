@@ -258,7 +258,7 @@ def histplot_two_groups(implicit_df, explicit_df, measure_list, labels, l, h, ti
 #
 # Plotly visualisation of a correlation,
 # takes a first measure, a second measure and colors canonical works if canon == True
-def plotly_viz_correlation_improved(df, first, second, canon_col_name, w, h, hoverdata_column, canons=False, color_canon=False, save=False):
+def plotly_viz_correlation_improved(df, first, second, canon_col_name, w, h, hoverdata_column, color_canon=False, save=False):
 
     # make the labels
     labels = {first:str(first).replace('_', ' ').lower(), second:str(second).replace('_', ' ').lower(),
@@ -275,20 +275,11 @@ def plotly_viz_correlation_improved(df, first, second, canon_col_name, w, h, hov
     else:
         dat = df
 
-    # if we chose only to visualize canons
-    if canons == True:
-        if canon_col_name == True:
-            dat = df.loc[df[canon_col_name] == 1]
-        else:
-            print('please supply the name of the column that indexes whether works are canonic or not')
-    else:
-        dat = df
-
     ## Correlation
     # remove 0 values to do the correlation
     df = dat[(dat[first] != 0) & (dat[second] != 0)]
     df_2 = dat[(dat[first].notnull()) & (dat[second].notnull())]
-    print('number of words considered: ', len(df_2))
+    print('number of sentences considered: ', len(df_2))
 
     # Get spearman r and make the coeff the title of the plot
     coef, pvalue = stats.spearmanr(df_2[first], df_2[second])
