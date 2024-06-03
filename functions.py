@@ -277,12 +277,12 @@ def plotly_viz_correlation_improved(df, first, second, canon_col_name, w, h, hov
 
     ## Correlation
     # remove 0 values to do the correlation
-    df = dat[(dat[first] != 0) & (dat[second] != 0)]
-    df_2 = dat[(dat[first].notnull()) & (dat[second].notnull())]
-    print('number of sentences considered: ', len(df_2))
+    #df = dat[(dat[first] != 0) & (dat[second] != 0)]
+    df = dat[(dat[first].notna()) & (dat[second].notna())]
+    print('number of sentences considered: ', len(df))
 
     # Get spearman r and make the coeff the title of the plot
-    coef, pvalue = stats.spearmanr(df_2[first], df_2[second])
+    coef, pvalue = stats.spearmanr(df[first], df[second])
 
     if pvalue < 0.01:
         pvalue_viz = 'p < 0.01'
@@ -297,11 +297,11 @@ def plotly_viz_correlation_improved(df, first, second, canon_col_name, w, h, hov
     if color_canon == True:
         canon_only_df = dat.loc[dat['CANON_ALL'] == 1]
         # remove 0 values to do the correlation
-        df_2_canon = canon_only_df[(canon_only_df[first].notnull()) & (canon_only_df[second].notnull())]
-        print('number of titles considered: ', len(df_2_canon))
+        df_canon = canon_only_df[(canon_only_df[first].notnull()) & (canon_only_df[second].notnull())]
+        print('number of titles considered: ', len(df_canon))
 
         # Get spearman r and make the coeff the title of the plot
-        coef_canon, pvalue_canon = stats.spearmanr(df_2_canon[first], df_2_canon[second])
+        coef_canon, pvalue_canon = stats.spearmanr(df_canon[first], df_canon[second])
 
         if pvalue_canon < 0.01:
             pvalue_viz_canon = 'p < 0.01'
