@@ -37,8 +37,8 @@ print("Min of 'imag' column:", min_imag)
 # %%
 
 # set input path for data
-input_path = 'data/EmoTales/emoTales.json' #'data/emobank_w_features_and_cats.json' #'data/FB_data_w_features.json' 
-title = 'EmoTales'
+input_path = 'data/all_texts_w_sensorimotor.json'  #'data/emobank_w_features_and_cats.json' #'data/FB_data_w_features.json' 
+title = input_path.split('/')[1].split('_')[0]
 print(title)
 # texts should contain sentences and SA scores
 
@@ -74,10 +74,13 @@ for i, row in df.iterrows():
     
     imageabilities_avg.append(np.nanmean(imageabilities))
 # %%
-df['imageability_avg'] = imageabilities_avg
+df['avg_imageability'] = imageabilities_avg
 df.head()
 
 # %%
 # dump to json
-
+with open(f'{input_path}', 'w') as f:
+    json.dump(df.to_dict(), f)
+# %%
+print('Imageability calculated and json updated!')
 # %%

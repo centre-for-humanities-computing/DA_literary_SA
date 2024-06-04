@@ -6,7 +6,7 @@ from functions import *
 # set out path for visualizations
 output_path = 'figures/'
 # set input path for data
-input_path =  'data/all_texts_w_sensorimotor.json'#data/EmoTales_w_features.json'#'data/FB_data_w_features.json'#'data/all_texts_w_sensorimotor.json' 
+input_path =  'data/all_texts_w_sensorimotor.json' #'data/EmoTales_w_features.json' #'data/FB_data_w_features.json'#'data/emobank_w_features_and_cats.json'#'data/all_texts_w_sensorimotor.json'''data/all_texts_w_sensorimotor.json'#
 
 # set save-title
 save_title = input_path.split('/')[-1].split('.')[0]
@@ -60,11 +60,13 @@ if save_title in data_to_normalize:
 # I'm not thrilled about this normalization of human scores business
 
 # %%
+sns.histplot(df['HUMAN'])
+# %%
 # GROUPING
-filtered = df.loc[(df['HUMAN'] <= 5) | (df['HUMAN'] > 6)].reset_index(drop=False)
+filtered = df.loc[(df['HUMAN'] <= 4.5) | (df['HUMAN'] >= 5.5)].reset_index(drop=False)
 print('filtered:', len(filtered))
 
-threshold = 0.1
+threshold = 0.4
 # we want to use VADER for english, sentida for danish texts?
 # we need to decide whether we want to filter on both dict and roberta...
 #dictionary_used = 'sentida_MODERN'#'vader'
@@ -79,11 +81,11 @@ print('len_EXplicit_group:', len(explicit_df))
 
 # %%
 # statistics
-measure_list = ['avg_valence', 'avg_arousal', 'avg_dominance', 'avg_concreteness']#, 'avg_sensorimotor']
+measure_list = ['avg_arousal', 'avg_concreteness', 'avg_imageability']#, 'avg_sensorimotor'] # avg_dominance # 'avg_valence', 
 
 # if it is EmoTales, we also have annotations for valence, so use it
 if save_title == 'EmoTales_w_features':
-    measure_list = ['avg_valence', 'avg_arousal', 'avg_dominance', 'avg_concreteness', 'avg_action', 'avg_power']
+    measure_list = measure_list + ['avg_action', 'avg_power']
     print('EmoTales avg POW & ACT is also used')
     width_plot = 15
 else:
@@ -91,7 +93,7 @@ else:
 
 # and use V, D if it is EmoBank
 if save_title == 'emobank_w_features_and_cats':
-    measure_list = ['avg_valence', 'avg_arousal', 'avg_dominance', 'avg_concreteness', 'avg_harousal', 'avg_hdominance']
+    measure_list = measure_list + ['avg_harousal']
     print('EmoBank avg human dominance & arousal is also used')
 
 
@@ -212,7 +214,7 @@ if save_title in column_map.keys():
 # the whole data (not divided into categories)
 # and visualizing it
 thresholds = [0, 5, 10, 15, 20, 25, 30]
-scores_list = ['avg_arousal', 'avg_dominance', 'avg_concreteness']
+scores_list = ['avg_arousal', 'avg_concreteness', 'avg_imageability']
 
 # going back to the original (certainly) unfiltered dataframe -- 'data'
 data['HUMAN_NORM'] = normalize(data['HUMAN'], scale_zero_to_ten=False)
@@ -227,11 +229,13 @@ for threshold in thresholds:
 # %%
 # correlation at different thresholds per each category
 # this is only for the emobank data with categories
+
+
 if save_title in column_map:
 
-    # let's try filtering for the different categories and correlating diff score to the features
+    # Let's try filtering for the different categories and correlating diff score to the features
     categories = data[column_map[save_title]].unique()
-    thresholds = [0, 5, 10, 15, 20, 25, 30, 35]
+    thresholds = [0, 5, 10, 15, 20, 25, 30]
 
     category_data_all = {}
 
@@ -242,50 +246,48 @@ if save_title in column_map:
 
         for threshold in thresholds:
 
-            category_data_threshold = []
-
-            print('Category:', category, '- No. words/sentence threshold:', threshold)
+            category_data_threshold = {}
 
             # Filter data based on category and threshold
             data_filtered_for_s_len = category_df.loc[category_df['SENTENCE_LENGTH'] > threshold]
             # Drop NaNs before correlation
-            data_filtered_for_s_len_dropna = data_filtered_for_s_len.dropna(subset=['ROBERTA_HUMAN_DIFF', 'avg_concreteness', 'avg_arousal'])
+            data_filtered_for_s_len_dropna = data_filtered_for_s_len.dropna(subset=['ROBERTA_HUMAN_DIFF'] + measure_list)
+
+            measure_results = {}
 
             for measure in measure_list:
-                corrs = []
-                pvals = []
-                # Calculate correlation for concreteness
-                corr = stats.spearmanr(data_filtered_for_s_len_dropna['ROBERTA_HUMAN_DIFF'], data_filtered_for_s_len_dropna[measure])
-                corrs.append(round(correlation_conc[0], 3))
-                pvals.append(round(correlation_conc[1], 5))
+                # Calculate correlation for each measure
+                corr, pval = stats.spearmanr(data_filtered_for_s_len_dropna['ROBERTA_HUMAN_DIFF'], data_filtered_for_s_len_dropna[measure])
+                measure_results[measure] = {'correlation': round(corr, 3), 'p-value': round(pval, 5)}
 
-            category_data_threshold.append(dict(zip(corrs, pvals)))
-            
-        # Store results
-        category_data_per_threshold[threshold] = {'no_texts': len(data_filtered_for_s_len_dropna), 
-                                                'scores' : dict(zip(measure_list, category_data_threshold))}
+            # Store results
+            category_data_threshold['no_texts'] = len(data_filtered_for_s_len_dropna)
+            category_data_threshold['scores'] = measure_results
+
+            category_data_per_threshold[threshold] = category_data_threshold
 
         category_data_all[category] = category_data_per_threshold
 
 category_data_all
 
+
 # %%
 # We just want the correlation of the whole data with the 5 word sentence threshold
-scores_list = ['avg_arousal', 'avg_dominance', 'avg_concreteness']
+scores_list = ['avg_arousal', 'avg_concreteness', 'avg_imageability']
 
 data_filtered_for_s_len = data.loc[data['SENTENCE_LENGTH'] > 5]
-data_filtered_for_s_len_dropna = data_filtered_for_s_len.dropna(subset=['ROBERTA_HUMAN_DIFF', 'avg_concreteness', 'avg_arousal', 'avg_dominance'])
-
+data_filtered_for_s_len_dropna = data_filtered_for_s_len.dropna(subset=['ROBERTA_HUMAN_DIFF', 'avg_concreteness', 'avg_arousal', 'avg_imageability'])
+print('len data', len(data_filtered_for_s_len_dropna))
 for feature in scores_list:
     correlation_conc = stats.spearmanr(data_filtered_for_s_len_dropna['ROBERTA_HUMAN_DIFF'], data_filtered_for_s_len_dropna[feature])
     corr_value_conc = round(correlation_conc[0], 3)
     p_value_conc = round(correlation_conc[1], 5)
-    print(feature, corr_value_conc, p_value_conc)
+    print('correlation::', feature, corr_value_conc, p_value_conc)
 
 # %%
 # and get the mean, std, median for the features across the categories
 # get the mean, std, median for the features across the categories
-features = ['avg_concreteness', 'avg_arousal','avg_dominance'] # 'avg_valence', 
+features = ['avg_concreteness', 'avg_arousal','avg_imageability', 'ROBERTA_HUMAN_DIFF'] # 'avg_valence', 
 data_unfiltered = {}
 
 print('All data')
@@ -293,7 +295,6 @@ for feature in features:
             # get mean, std, median
         mean = round(data[feature].mean(), 3)
         std = round(data[feature].std(), 3)
-        median = round(data[feature].median(), 3)
         data_unfiltered[feature] = {'mean': mean, 'std': std}#, 'median': median}
 
 print(pd.DataFrame.from_dict(data_unfiltered))
@@ -323,6 +324,7 @@ if save_title in column_map:
 
 
 # %%
+
 print('All done!')
 
 # %%
