@@ -6,7 +6,7 @@ from functions import *
 # set out path for visualizations
 output_path = 'figures/'
 # set input path for data
-input_path =  'data/all_texts_w_sensorimotor.json'#'data/emobank_w_features_and_cats.json'#'data/FB_data_w_features.json'#'data/all_texts_w_sensorimotor.json' #'data/EmoTales_w_features.json' #'data/all_texts_w_sensorimotor.json'''data/all_texts_w_sensorimotor.json'#
+input_path =  'data/EmoTales_w_features.json'#'data/emobank_w_features_and_cats.json'#'data/all_texts_w_sensorimotor.json'#'data/FB_data_w_features.json'#'data/all_texts_w_sensorimotor.json'#'data/FB_data_w_features.json'#'data/all_texts_w_sensorimotor.json' #'data/all_texts_w_sensorimotor.json'''data/all_texts_w_sensorimotor.json'#
 
 # set save-title
 save_title = input_path.split('/')[-1].split('.')[0]
@@ -35,7 +35,12 @@ data['SENTENCE_LENGTH'] = lens
 data.tail()
 
 # %%
-data.columns
+if save_title == 'emobank_w_features_and_cats':
+    # get rid of the SemEval "genre"
+    data = data.loc[data['category'] != 'SemEval']
+    print('SemEval "genre" removed from EmoBank')
+                    
+print('avg len of sentences/posts in words:', round(data['SENTENCE_LENGTH'].mean(),1))
 
 # %%
 # try filtering out where sentences are too short
@@ -50,6 +55,9 @@ else:
 df['avg_visual'] = df['Visual.mean']
 df['avg_haptic'] = df['Haptic.mean']
 df['avg_interoceptive'] = df['Interoceptive.mean']
+
+if save_title == 'FB_data_w_features':
+    df['avg_harousal'] = df['harousal']
 
 # %%
 # we want to normalize the dictionary scores before using it to filter out the groups, but check that its needed
@@ -103,6 +111,10 @@ if save_title == 'emobank_w_features_and_cats':
     measure_list = measure_list + ['avg_harousal']
     print('EmoBank avg human dominance & arousal is also used')
 
+if save_title == 'FB_data_w_features':
+    measure_list = measure_list + ['avg_harousal']
+    print('FB avg human dominance & arousal is also used')
+
 
 print('measures considered:', measure_list)
 
@@ -148,6 +160,7 @@ ced_plot(implicit_df, explicit_df, measure_list, measure_list, save=True, save_t
 ced_plot(implicit_df, explicit_df, sensorimotor, sensorimotor, save=True, save_title=save_title + '_sensorimotor')
 # 
 
+
 # %%
 print('whole corpus')
 histplot_two_groups(implicit_df, explicit_df, measure_list, measure_list, l=28, h=5, title_plot=f"{save_title.split('_')[0]} All texts", density=True, save=True, save_title=save_title)
@@ -162,7 +175,7 @@ if save_title in column_map.keys():
         implicit_df_cat = implicit_df.loc[implicit_df[column_map[save_title]] == cat]
         explicit_df_cat = explicit_df.loc[explicit_df[column_map[save_title]] == cat]
         print(f'{cat}: GROUPS: len implicit:', len(implicit_df_cat), 'len explicit:', len(explicit_df_cat))
-        histplot_two_groups(implicit_df_cat, explicit_df_cat, measure_list, measure_list, l=28, h=5, title_plot=cat, density=True, save=True, save_title=save_title + '_' + cat)
+        histplot_two_groups(implicit_df_cat, explicit_df_cat, measure_list, measure_list, l=35, h=5, title_plot=cat, density=True, save=False, save_title=save_title + '_' + cat)
 
 # elif 'ID' in df.columns:
 #     df['CATEGORY'] = df['ID']
@@ -274,7 +287,7 @@ if save_title in column_map:
 
         category_data_all[category] = category_data_per_threshold
 
-category_data_all
+    category_data_all
 
 # %%
 # We just want the correlation of the whole data with the 5 word sentence threshold
