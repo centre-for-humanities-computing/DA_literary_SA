@@ -16,7 +16,7 @@ with open(input_path, 'r') as f:
 
 df = pd.DataFrame.from_dict(all_data)
 #df.columns = ['ANNOTATOR_1', 'SENTENCE']
-print('lemn data:', len(df))
+print('len data:', len(df))
 df.head()
 
 # %%
@@ -48,7 +48,7 @@ print('loaded imageability lexicon, len:', len(dict_mrc))
 # this one needs some extra cleaning, since keys are not lemmatized
 
 # %%
-dict_mrc['ear']['imag']
+dict_mrc['hear']['imag']
 # %%
 
 concretenesses_avg, all_concretenesses = [], []
@@ -86,7 +86,7 @@ for i, row in df.iterrows():
     olfactory = []
     visual = []
 
-    imageability = []
+    imageabilities = []
     
     # get the VAD values
     for word in words:
@@ -122,7 +122,11 @@ for i, row in df.iterrows():
             visual.append(np.nan)
         
         # get imageability
-        
+        if word in dict_mrc.keys():
+            imageabilities.append(dict_mrc[word]['imag'])
+        else:
+            imageabilities.append(np.nan)
+    
 
     # save everything and get the means per sentence
     valences_avg.append(np.nanmean(valences))
@@ -138,6 +142,8 @@ for i, row in df.iterrows():
     interoceptive_list.append(np.nanmean(interoceptive))
     olfactory_list.append(np.nanmean(olfactory))
     visual_list.append(np.nanmean(visual))
+
+    imageability_avg.append(np.nanmean(imageabilities))
 
 
 
@@ -173,13 +179,21 @@ print('# PART 2: sentiment analysis')
 xlm_model = pipeline(model="cardiffnlp/twitter-xlm-roberta-base-sentiment")
 
 # %%
-# Ensure text is strings
-df['SENTENCE_ENGLISH'] = df['SENTENCE_ENGLISH'].astype(str)
+#
+if title in datasets_english: # make sure we're using the english sentence (also for Danish texts)
+        use_col = 'SENTENCE'
+        # Ensure text is strings
+        df['SENTENCE'] = df['SENTENCE'].astype(str)
+else:
+    print('check that you use the right col for the mixed language dataset, set it manually')
+    # use_col = 'SENTENCE_ENGLISH'
+    # # Ensure text is strings
+    # df['SENTENCE_ENGLISH'] = df['SENTENCE_ENGLISH'].astype(str)
 
 xlm_labels = []
 xlm_scores = []
 
-for s in df['SENTENCE']:
+for s in df[use_col]:
     # Join to string if list
     if isinstance(s, list):
         s = " ".join(s)
@@ -195,7 +209,7 @@ df["tr_xlm_roberta"] = xlm_converted_scores
 
 # %%
 # get the VADER scores
-vader_scores = sentimarc_vader(df['SENTENCE'].values, untokd=False)
+vader_scores = sentimarc_vader(df[use_col].values, untokd=False)
 df['vader'] = vader_scores
 df.head()
 # %%
@@ -203,9 +217,5 @@ df.head()
 with open(f'{input_path}', 'w') as f:
     json.dump(df.to_dict(), f)
 # %%
-
-# open it again
-# just want to add averages of 'avg_power', 'avg_action'
-
-# question is whether they should be normalized
+print(f'treated {title.upper()}: \n VAD, concreteness, sensorimotor and imageability calculated \n -- json updated!')
 # %%
