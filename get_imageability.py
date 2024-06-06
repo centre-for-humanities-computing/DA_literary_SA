@@ -52,13 +52,20 @@ print(len(df))
 df.head()
 
 # %%
+for i, row in df.iterrows():
+    if pd.isna(row['SENTENCE_ENGLISH']):
+        print('no sent')
+        df.at[i, 'SENTENCE_ENGLISH'] = row['SENTENCE']
+
+df['SENTENCE_ENGLISH']
+# %%
 # loop through df
 
 imageabilities_avg = []
 
 for i, row in df.iterrows():
     words = []
-    sent = row['SENTENCE']
+    sent = row['SENTENCE_ENGLISH']
     toks = nltk.wordpunct_tokenize(sent.lower())
     lems = [lmtzr.lemmatize(word) if word != 'was' else word for word in toks] # there's an error wit lemmatizing was
     words += lems

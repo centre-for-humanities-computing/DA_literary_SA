@@ -6,7 +6,7 @@ from functions import *
 # set out path for visualizations
 output_path = 'figures/'
 # set input path for data
-input_path =  'data/all_texts_w_sensorimotor.json' #'data/EmoTales_w_features.json' #'data/FB_data_w_features.json'#'data/emobank_w_features_and_cats.json'#'data/all_texts_w_sensorimotor.json'''data/all_texts_w_sensorimotor.json'#
+input_path =  'data/all_texts_w_sensorimotor.json'#'data/emobank_w_features_and_cats.json'#'data/FB_data_w_features.json'#'data/all_texts_w_sensorimotor.json' #'data/EmoTales_w_features.json' #'data/all_texts_w_sensorimotor.json'''data/all_texts_w_sensorimotor.json'#
 
 # set save-title
 save_title = input_path.split('/')[-1].split('.')[0]
@@ -35,6 +35,9 @@ data['SENTENCE_LENGTH'] = lens
 data.tail()
 
 # %%
+data.columns
+
+# %%
 # try filtering out where sentences are too short
 # we want to tokenize first
 if filter == True:
@@ -43,6 +46,10 @@ if filter == True:
 else:
     df = data
     print('len df, unfiltered:', len(df))
+
+df['avg_visual'] = df['Visual.mean']
+df['avg_haptic'] = df['Haptic.mean']
+df['avg_interoceptive'] = df['Interoceptive.mean']
 
 # %%
 # we want to normalize the dictionary scores before using it to filter out the groups, but check that its needed
@@ -81,7 +88,7 @@ print('len_EXplicit_group:', len(explicit_df))
 
 # %%
 # statistics
-measure_list = ['avg_arousal', 'avg_concreteness', 'avg_imageability']#, 'avg_sensorimotor'] # avg_dominance # 'avg_valence', 
+measure_list = ['avg_arousal', 'avg_concreteness', 'avg_imageability', 'avg_visual', 'avg_haptic']#, 'avg_interoceptive']#, 'avg_sensorimotor'] # avg_dominance # 'avg_valence', 
 
 # if it is EmoTales, we also have annotations for valence, so use it
 if save_title == 'EmoTales_w_features':
@@ -220,11 +227,11 @@ scores_list = ['avg_arousal', 'avg_concreteness', 'avg_imageability']
 data['HUMAN_NORM'] = normalize(data['HUMAN'], scale_zero_to_ten=False)
 data['ROBERTA_HUMAN_DIFF'] = abs(abs(data['HUMAN_NORM']) - abs(data['tr_xlm_roberta']))
 
-for threshold in thresholds:
-    print('no. words/sentence threshold:', threshold)
-    data_filtered = data.loc[(data['SENTENCE_LENGTH'] > threshold)]
-    print('len of df:', len(data_filtered), ' texts')
-    plot_scatters(data_filtered, scores_list, 'ROBERTA_HUMAN_DIFF', 'pink', 20, 6, hue=False, remove_outliers=False, outlier_percentile=100, show_corr_values=True)
+# for threshold in thresholds:
+#     print('no. words/sentence threshold:', threshold)
+#     data_filtered = data.loc[(data['SENTENCE_LENGTH'] > threshold)]
+#     print('len of df:', len(data_filtered), ' texts')
+#     plot_scatters(data_filtered, scores_list, 'ROBERTA_HUMAN_DIFF', 'pink', 20, 6, hue=False, remove_outliers=False, outlier_percentile=100, show_corr_values=True)
 
 # %%
 # correlation at different thresholds per each category
@@ -235,7 +242,6 @@ if save_title in column_map:
 
     # Let's try filtering for the different categories and correlating diff score to the features
     categories = data[column_map[save_title]].unique()
-    thresholds = [0, 5, 10, 15, 20, 25, 30]
 
     category_data_all = {}
 
@@ -270,15 +276,13 @@ if save_title in column_map:
 
 category_data_all
 
-
 # %%
 # We just want the correlation of the whole data with the 5 word sentence threshold
-scores_list = ['avg_arousal', 'avg_concreteness', 'avg_imageability']
 
 data_filtered_for_s_len = data.loc[data['SENTENCE_LENGTH'] > 5]
 data_filtered_for_s_len_dropna = data_filtered_for_s_len.dropna(subset=['ROBERTA_HUMAN_DIFF', 'avg_concreteness', 'avg_arousal', 'avg_imageability'])
 print('len data', len(data_filtered_for_s_len_dropna))
-for feature in scores_list:
+for feature in measure_list:
     correlation_conc = stats.spearmanr(data_filtered_for_s_len_dropna['ROBERTA_HUMAN_DIFF'], data_filtered_for_s_len_dropna[feature])
     corr_value_conc = round(correlation_conc[0], 3)
     p_value_conc = round(correlation_conc[1], 5)
@@ -287,7 +291,7 @@ for feature in scores_list:
 # %%
 # and get the mean, std, median for the features across the categories
 # get the mean, std, median for the features across the categories
-features = ['avg_concreteness', 'avg_arousal','avg_imageability', 'ROBERTA_HUMAN_DIFF'] # 'avg_valence', 
+features = measure_list + ['ROBERTA_HUMAN_DIFF'] # 'avg_valence', 
 data_unfiltered = {}
 
 print('All data')

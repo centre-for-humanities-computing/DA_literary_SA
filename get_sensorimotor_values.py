@@ -6,7 +6,7 @@ from functions import *
 # %%
 
 # open the merged json
-with open('data/HEMINGWAY_w_features.json', 'r') as f:
+with open('data/FB_data_w_features.json', 'r') as f:
     all_data = json.load(f)
 
 df = pd.DataFrame.from_dict(all_data)
@@ -192,8 +192,8 @@ df.head()
 # %%
 
 # dump this to a json
-with open('data/HEMINGWAY_w_features.json', 'w') as f:
-    json.dump(df.to_dict(), f)
+#with open('data/FB_data_w_features.json', 'w') as f:
+    #json.dump(df.to_dict(), f)
     
 # %%
 print('All done!')

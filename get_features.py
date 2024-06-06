@@ -9,8 +9,8 @@ import os
 
 # %%
 # set input path for data
-input_path = 'data/EmoTales/emoTales.json' #'data/emobank_w_features_and_cats.json' #'data/FB_data_w_features.json' 
-title = 'EmoTales'
+input_path = 'data/all_texts_w_sensorimotor.json' #'data/emobank_w_features_and_cats.json' #'data/FB_data_w_features.json' 
+title = input_path.split('/')[1].split('_')[0]
 print(title)
 # texts should contain sentences and SA scores
 
@@ -42,6 +42,7 @@ with open('resources/sensorimotor_norms_dict.json', 'r') as f:
     sensori_dict = json.load(f)
 print('loaded sensorimotor lexicon')
 
+
 # %%
 lmtzr = WordNetLemmatizer()
 
@@ -65,7 +66,7 @@ def convert_to_float(value):
 # loop through df
 for i, row in df.iterrows():
     words = []
-    sent = row['SENTENCE']
+    sent = row['SENTENCE_ENGLISH']
     toks = nltk.wordpunct_tokenize(sent.lower())
     lems = [lmtzr.lemmatize(word) for word in toks]
     words += lems
@@ -160,7 +161,7 @@ xlm_model = pipeline(model="cardiffnlp/twitter-xlm-roberta-base-sentiment")
 
 # %%
 # Ensure text is strings
-df['SENTENCE'] = df['SENTENCE'].astype(str)
+df['SENTENCE_ENGLISH'] = df['SENTENCE_ENGLISH'].astype(str)
 
 xlm_labels = []
 xlm_scores = []
@@ -205,7 +206,7 @@ df['vader'] = vader_scores
 df.head()
 # %%
 # dump to json
-with open(f'data/{title}_w_features.json', 'w') as f:
+with open(f'data/all_texts_w_sensorimotor.json', 'w') as f:
     json.dump(df.to_dict(), f)
 # %%
 
