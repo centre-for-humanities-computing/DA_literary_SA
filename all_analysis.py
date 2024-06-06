@@ -8,7 +8,7 @@ output_path = 'figures/'
 # set input path for data
 input_path =  'data/emobank_data.json'
 # make a save-title
-save_title = input_path.split('/')[-1].split('.')[0].split('_')[0]
+save_title = input_path.split('/')[-1].split('_')[0]
 
 filter = False
 len_threshold = 5

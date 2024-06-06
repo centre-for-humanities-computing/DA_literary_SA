@@ -34,6 +34,13 @@ min_imag = min(imag_values)
 
 print("Maximum of 'imag' column:", max_imag)
 print("Min of 'imag' column:", min_imag)
+
+lemmatized_dict['ear']
+
+# %%
+# dump dict to json
+with open('Resources/mrc_psychol_dict.json', 'w') as f:
+    json.dump(lemmatized_dict, f)
 # %%
 
 # set input path for data
@@ -51,13 +58,6 @@ df = pd.DataFrame.from_dict(all_data)
 print(len(df))
 df.head()
 
-# %%
-for i, row in df.iterrows():
-    if pd.isna(row['SENTENCE_ENGLISH']):
-        print('no sent')
-        df.at[i, 'SENTENCE_ENGLISH'] = row['SENTENCE']
-
-df['SENTENCE_ENGLISH']
 # %%
 # loop through df
 

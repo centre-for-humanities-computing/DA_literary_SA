@@ -23,12 +23,13 @@ def normalize(ts, scale_zero_to_ten=False):
     else:
         return ts01
 
-# function to get mean of list of floats
-def mean_when_floated(x):
+    
+# Function to safely convert to float
+def convert_to_float(value):
     try:
-        return float(np.mean([float(e) for e in x if e is not np.nan]))
-    except:
-        return 0
+        return float(value)
+    except (ValueError, TypeError):
+        return np.nan
 
 
 ## plotting DISTRIBUTIONS
@@ -405,6 +406,10 @@ def plot_scatters(df, scores_list, var, color, w, h, hue=False, remove_outliers=
     print("mæhmæhmnæh")
 
     plt.show()
+
+
+
+
 
 # For SENTIMENT ANALYSIS
 

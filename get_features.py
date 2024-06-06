@@ -3,15 +3,11 @@
 from utils import *
 from functions import *
 
-from nltk.stem import WordNetLemmatizer
-import pickle as pkl
-import os
-
 # %%
 # set input path for data
-input_path = 'data/all_texts_w_sensorimotor.json' #'data/emobank_w_features_and_cats.json' #'data/FB_data_w_features.json' 
+input_path = 'data/emobank_data.json'
 title = input_path.split('/')[1].split('_')[0]
-print(title)
+print('data treated:', title.upper())
 # texts should contain sentences and SA scores
 
 # %%
@@ -20,31 +16,40 @@ with open(input_path, 'r') as f:
 
 df = pd.DataFrame.from_dict(all_data)
 #df.columns = ['ANNOTATOR_1', 'SENTENCE']
-print(len(df))
+print('lemn data:', len(df))
 df.head()
 
 # %%
-# CONCRETENESS RUN
+# PART 1: loading dicts, getting feature values
+print('# PART 1: loading dicts, getting feature values')
+
 # Loading concreteness lexicon
 # the json is structured so that the word is the key, the value the concreteness score
 with open("resources/concreteness_brysbaert.json", 'r') as f:
     diconc = json.load(f)
-print('loaded concreteness lexicon')
+print('loaded concreteness lexicon, len:', len(diconc))
 
 # loading VAD
 # same here, where values are the valence, arousal and dominance scores (in that order)
 with open("resources/VAD_lexicon.json", 'r') as f:
     dico = json.load(f)
-print('loaded VAD lexicon')
+print('loaded VAD lexicon, len:', len(dico))
 
 # reopen save dict of sensorimotor values
 with open('resources/sensorimotor_norms_dict.json', 'r') as f:
     sensori_dict = json.load(f)
-print('loaded sensorimotor lexicon')
+print('loaded sensorimotor lexicon, len:', len(sensori_dict))
 
+# and get the imageability dict from MRC psycholinguistics database
+with open('Resources/mrc_psychol_dict.json', 'r') as f:
+    dict_mrc = json.load(f)
+print('loaded imageability lexicon, len:', len(dict_mrc))
+
+# this one needs some extra cleaning, since keys are not lemmatized
 
 # %%
-lmtzr = WordNetLemmatizer()
+dict_mrc['ear']['imag']
+# %%
 
 concretenesses_avg, all_concretenesses = [], []
 valences_avg, arousals_avg, dominances_avg = [], [], []
@@ -56,24 +61,24 @@ interoceptive_list = []
 olfactory_list = []
 visual_list = []
 
-# Function to safely convert to float
-def convert_to_float(value):
-    try:
-        return float(value)
-    except (ValueError, TypeError):
-        return np.nan
+imageability_avg = []
+
+datasets_english = ['emobank', 'emotales', 'FB']
 
 # loop through df
 for i, row in df.iterrows():
     words = []
-    sent = row['SENTENCE_ENGLISH']
+    if title in datasets_english: # make sure we're using the english sentence (also for Danish texts)
+        sent = row['SENTENCE']
+    else:
+        sent = row['SENTENCE_ENGLISH']
     toks = nltk.wordpunct_tokenize(sent.lower())
     lems = [lmtzr.lemmatize(word) for word in toks]
     words += lems
 
+    # lists to store values for current row
     valences, arousals, dominances, concreteness = [], [], [], []
 
-    # store values for current row
     auditory = []
     gustatory = []
     haptic = []
@@ -81,6 +86,9 @@ for i, row in df.iterrows():
     olfactory = []
     visual = []
 
+    imageability = []
+    
+    # get the VAD values
     for word in words:
         if word in dico.keys(): 
             valences.append(convert_to_float(dico[word][0]))
@@ -91,10 +99,13 @@ for i, row in df.iterrows():
             arousals.append(np.nan)
             dominances.append(np.nan)
         
+        # get concreteness
         if word in diconc.keys(): 
-            concreteness.append(convert_to_float(diconc[word]))
+            concreteness.append(np.nanmean(diconc[word]))
         else:
             concreteness.append(np.nan)
+
+        # get the sensorimotor values
         if word in sensori_dict.keys(): 
             auditory.append(sensori_dict[word]['Auditory.mean'])
             gustatory.append(sensori_dict[word]['Gustatory.mean'])
@@ -109,20 +120,18 @@ for i, row in df.iterrows():
             interoceptive.append(np.nan)
             olfactory.append(np.nan)
             visual.append(np.nan)
+        
+        # get imageability
+        
 
-    avg_conc = np.nanmean(concreteness)
-    avg_val = np.nanmean(valences)
-    avg_ar = np.nanmean(arousals)
-    avg_dom = np.nanmean(dominances)
+    # save everything and get the means per sentence
+    valences_avg.append(np.nanmean(valences))
+    arousals_avg.append(np.nanmean(arousals))
+    dominances_avg.append(np.nanmean(dominances))
 
-    concretenesses_avg.append(avg_conc)
+    concretenesses_avg.append(np.nanmean(concreteness))
     all_concretenesses.append(concreteness)
 
-    valences_avg.append(avg_val)
-    arousals_avg.append(avg_ar)
-    dominances_avg.append(avg_dom)
-
-        # Calculate the mean of each sensory list for the current row
     auditory_list.append(np.nanmean(auditory))
     gustatory_list.append(np.nanmean(gustatory))
     haptic_list.append(np.nanmean(haptic))
@@ -148,13 +157,17 @@ df['Interoceptive.mean'] = interoceptive_list
 df['Olfactory.mean'] = olfactory_list
 df['Visual.mean'] = visual_list
 
+
 df.head()
 # %%
+# checkup
 df = df.copy().reset_index(drop=True)
 print(len(df))
 df.head()
 
 # %%
+# PART 2: sentiment analysis
+print('# PART 2: sentiment analysis')
 # now we want to get the VADER and roberta scores for these texts
 
 xlm_model = pipeline(model="cardiffnlp/twitter-xlm-roberta-base-sentiment")
@@ -177,27 +190,8 @@ for s in df['SENTENCE']:
 
 # function defined in functions to transform score to continuous
 xlm_converted_scores = conv_scores(xlm_labels, xlm_scores, ["positive", "neutral", "negative"])
-
-# %%
 df["tr_xlm_roberta"] = xlm_converted_scores
 
-# %% 
-# and then we also need the VADER
-
-# %%
-
-sid =  SentimentIntensityAnalyzer()
-
-def sentimarc_vader(text, untokd=True):
-    if untokd:
-        sents = nltk.sent_tokenize(text)
-        print(len(sents))
-    else: sents = text
-    arc=[]
-    for sentence in sents:
-        compound_pol = sid.polarity_scores(sentence)['compound']
-        arc.append(compound_pol)
-    return arc
 
 # %%
 # get the VADER scores
@@ -206,7 +200,7 @@ df['vader'] = vader_scores
 df.head()
 # %%
 # dump to json
-with open(f'data/all_texts_w_sensorimotor.json', 'w') as f:
+with open(f'{input_path}', 'w') as f:
     json.dump(df.to_dict(), f)
 # %%
 
