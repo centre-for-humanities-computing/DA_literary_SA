@@ -6,7 +6,7 @@ from functions import *
 # set out path for visualizations
 output_path = 'figures/'
 # set input path for data
-input_path =  'data/emobank_data.json'
+input_path =  'data/fiction4_data.json'
 # make a save-title
 save_title = input_path.split('/')[-1].split('_')[0]
 
@@ -19,13 +19,14 @@ if filter == True:
 else:
     print('dataset treated:', save_title.upper())
 
-
 # %%
 # open the merged json and make df
 with open(input_path, 'r') as f:
     all_data = json.load(f)
 data = pd.DataFrame.from_dict(all_data)
+data.head()
 
+# %%
 # Tokenize and get len of sentences/posts
 data['SENTENCE_TOKENNIZED'] = data['SENTENCE'].apply(lambda x: nltk.wordpunct_tokenize(x.lower()))
 lens = data['SENTENCE_TOKENNIZED'].apply(lambda x: len(x))
@@ -49,6 +50,7 @@ if 'emobank' in save_title:
     print('SemEval "genre" removed from EmoBank')
 print('avg words per sentence/post:', round(df['SENTENCE_LENGTH'].mean(),1), '--std:', round(df['SENTENCE_LENGTH'].std(),1))
 print('number of sentences/posts:', len(df))
+print('number of words:', df['SENTENCE_LENGTH'].sum())
 
 # rename columns
 df['avg_visual'] = df['Visual.mean']
@@ -277,6 +279,7 @@ category_data_all
 data_filtered_for_s_len = df.loc[df['SENTENCE_LENGTH'] > 5]
 data_filtered_for_s_len_dropna = data_filtered_for_s_len.dropna(subset=['ROBERTA_HUMAN_DIFF', 'avg_concreteness', 'avg_arousal', 'avg_imageability'])
 print('len data', len(data_filtered_for_s_len_dropna))
+print('correlation of whole data with 5 word threshold')
 for feature in measure_list:
     correlation_conc = stats.spearmanr(data_filtered_for_s_len_dropna['ROBERTA_HUMAN_DIFF'], data_filtered_for_s_len_dropna[feature])
     corr_value_conc = round(correlation_conc[0], 3)

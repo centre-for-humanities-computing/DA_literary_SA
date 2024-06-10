@@ -1,11 +1,46 @@
-# %%
 
-from utils import *
+try:
+    from utils import *
+except ImportError:
+    %pip install -r /requirements.txt
+    from utils import *
+
 from functions import *
 
 # %%
+# with open('data/plath_ea_ALL.json', 'r') as f:
+#     ea = json.load(f)
+# ea = pd.DataFrame.from_dict(ea, orient='index', columns=['ANNOTATOR_2','SENTENCE'])
+# ea['ANNOTATOR_2'] = ea['ANNOTATOR_2'].astype(int)
+# ea.head()
+
+# # %%
+# with open('data/plath_data_pasc.json', 'r') as f:
+#     pascale = json.load(f)
+# pascale
+# # %%
+# pascale = pd.DataFrame.from_dict(pascale)
+# pascale['ANNOTATOR_1'] = pascale['ANNOTATOR_1'].astype(float)
+# pascale.head()
+# # %%
+# merged = pd.merge(ea, pascale, on='SENTENCE', how='right')
+# merged['HUMAN'] = (merged['ANNOTATOR_2'] + merged['ANNOTATOR_1']) / 2
+
+# merged.head()
+# # %%
+# # save as json
+# with open('data/plath_data.json', 'w') as f:
+#     json.dump(merged.to_dict(), f)
+
+# # try opening it
+# with open('data/plath_data.json', 'r') as f:
+#     all_data = json.load(f)
+
+# all_data = pd.DataFrame.from_dict(all_data)
+# all_data.head()
+# %%
 # set input path for data
-input_path = 'data/emobank_data.json'
+input_path = 'data/plath_data.json'
 title = input_path.split('/')[1].split('_')[0]
 print('data treated:', title.upper())
 # texts should contain sentences and SA scores
@@ -63,7 +98,7 @@ visual_list = []
 
 imageability_avg = []
 
-datasets_english = ['emobank', 'emotales', 'FB']
+datasets_english = ['emobank', 'emotales', 'FB', 'plath']
 
 # loop through df
 for i, row in df.iterrows():
@@ -71,6 +106,7 @@ for i, row in df.iterrows():
     if title in datasets_english: # make sure we're using the english sentence (also for Danish texts)
         sent = row['SENTENCE']
     else:
+        print('using SENTENCE_ENGLISH')
         sent = row['SENTENCE_ENGLISH']
     toks = nltk.wordpunct_tokenize(sent.lower())
     lems = [lmtzr.lemmatize(word) for word in toks]
@@ -162,6 +198,8 @@ df['Haptic.mean'] = haptic_list
 df['Interoceptive.mean'] = interoceptive_list
 df['Olfactory.mean'] = olfactory_list
 df['Visual.mean'] = visual_list
+
+df['avg_imageability'] = imageability_avg
 
 
 df.head()

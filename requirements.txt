@@ -1,0 +1,27 @@
+# General utilities
+os
+json
+importlib
+
+# Data handling
+pandas
+numpy
+scikit-learn
+
+# Plotting libraries
+seaborn
+matplotlib
+plotly
+
+# NLTK and related
+nltk
+
+# SciPy for statistical tests
+scipy
+
+# Transformers library for NLP models
+transformers
+
+# Optional dependencies (uncomment if needed)
+# sentencepiece
+# protobuf
