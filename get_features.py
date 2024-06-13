@@ -1,13 +1,15 @@
 
-try:
-    from utils import *
-except ImportError:
-    %pip install -r /requirements.txt
-    from utils import *
+# %%
+# 
+from utils import *
+# except ImportError:
+#     %pip install -r /requirements.txt
+#     from utils import *
 
 from functions import *
 
 # %%
+
 # with open('data/plath_ea_ALL.json', 'r') as f:
 #     ea = json.load(f)
 # ea = pd.DataFrame.from_dict(ea, orient='index', columns=['ANNOTATOR_2','SENTENCE'])
@@ -40,7 +42,7 @@ from functions import *
 # all_data.head()
 # %%
 # set input path for data
-input_path = 'data/plath_data.json'
+input_path = 'data/fiction4_data.json'
 title = input_path.split('/')[1].split('_')[0]
 print('data treated:', title.upper())
 # texts should contain sentences and SA scores
@@ -84,6 +86,9 @@ print('loaded imageability lexicon, len:', len(dict_mrc))
 
 # %%
 dict_mrc['hear']['imag']
+
+# %%
+[x for x in df['SENTENCE_ENGLISH'] if len(x) < 1]
 # %%
 
 concretenesses_avg, all_concretenesses = [], []
@@ -100,14 +105,18 @@ imageability_avg = []
 
 datasets_english = ['emobank', 'emotales', 'FB', 'plath']
 
+if title in datasets_english:
+    use_col = 'SENTENCE'
+else:
+    print("Using col 'SENTENCE_ENGLISH' for calculating the dictionary values")
+    use_col = 'SENTENCE_ENGLISH'
+
 # loop through df
 for i, row in df.iterrows():
     words = []
-    if title in datasets_english: # make sure we're using the english sentence (also for Danish texts)
-        sent = row['SENTENCE']
-    else:
-        print('using SENTENCE_ENGLISH')
-        sent = row['SENTENCE_ENGLISH']
+     # make sure we're using the english sentence (also for Danish texts)
+    sent = row[use_col]
+
     toks = nltk.wordpunct_tokenize(sent.lower())
     lems = [lmtzr.lemmatize(word) for word in toks]
     words += lems
