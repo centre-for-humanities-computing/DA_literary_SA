@@ -2,59 +2,24 @@
 # %%
 # 
 from utils import *
-# except ImportError:
-#     %pip install -r /requirements.txt
-#     from utils import *
-
 from functions import *
 
-# %%
 
-# with open('data/plath_ea_ALL.json', 'r') as f:
-#     ea = json.load(f)
-# ea = pd.DataFrame.from_dict(ea, orient='index', columns=['ANNOTATOR_2','SENTENCE'])
-# ea['ANNOTATOR_2'] = ea['ANNOTATOR_2'].astype(int)
-# ea.head()
-
-# # %%
-# with open('data/plath_data_pasc.json', 'r') as f:
-#     pascale = json.load(f)
-# pascale
-# # %%
-# pascale = pd.DataFrame.from_dict(pascale)
-# pascale['ANNOTATOR_1'] = pascale['ANNOTATOR_1'].astype(float)
-# pascale.head()
-# # %%
-# merged = pd.merge(ea, pascale, on='SENTENCE', how='right')
-# merged['HUMAN'] = (merged['ANNOTATOR_2'] + merged['ANNOTATOR_1']) / 2
-
-# merged.head()
-# # %%
-# # save as json
-# with open('data/plath_data.json', 'w') as f:
-#     json.dump(merged.to_dict(), f)
-
-# # try opening it
-# with open('data/plath_data.json', 'r') as f:
-#     all_data = json.load(f)
-
-# all_data = pd.DataFrame.from_dict(all_data)
-# all_data.head()
 # %%
 # set input path for data
-input_path = 'data/fiction4_data.json'
+input_path = 'data/fiction3_data.json'
 title = input_path.split('/')[1].split('_')[0]
 print('data treated:', title.upper())
-# texts should contain sentences and SA scores
+# texts should contain sentences and SA annotated scores
 
 # %%
 with open(input_path, 'r') as f:
     all_data = json.load(f)
 
 df = pd.DataFrame.from_dict(all_data)
-#df.columns = ['ANNOTATOR_1', 'SENTENCE']
 print('len data:', len(df))
 df.head()
+
 
 # %%
 # PART 1: loading dicts, getting feature values
@@ -85,7 +50,10 @@ print('loaded imageability lexicon, len:', len(dict_mrc))
 # this one needs some extra cleaning, since keys are not lemmatized
 
 # %%
-dict_mrc['hear']['imag']
+words = ['dog', 'feeling', 'stomach', 'outside', 'tree', 'heart', 'stone']
+print('interoceptive values test')
+for word in words:
+    print(word, sensori_dict[word]['Interoceptive.mean'])
 
 # %%
 [x for x in df['SENTENCE_ENGLISH'] if len(x) < 1]
@@ -233,7 +201,8 @@ if title in datasets_english: # make sure we're using the english sentence (also
         df['SENTENCE'] = df['SENTENCE'].astype(str)
 else:
     print('check that you use the right col for the mixed language dataset, set it manually')
-    # use_col = 'SENTENCE_ENGLISH'
+    use_col = 'SENTENCE_ENGLISH'
+    print(f'using col {use_col}')
     # # Ensure text is strings
     # df['SENTENCE_ENGLISH'] = df['SENTENCE_ENGLISH'].astype(str)
 
@@ -259,6 +228,7 @@ df["tr_xlm_roberta"] = xlm_converted_scores
 vader_scores = sentimarc_vader(df[use_col].values, untokd=False)
 df['vader'] = vader_scores
 df.head()
+
 # %%
 # dump to json
 with open(f'{input_path}', 'w') as f:

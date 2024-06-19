@@ -24,6 +24,7 @@ else:
 with open(input_path, 'r') as f:
     all_data = json.load(f)
 data = pd.DataFrame.from_dict(all_data)
+print(len(data))
 data.head()
 
 # %%
@@ -52,6 +53,19 @@ print('avg words per sentence/post:', round(df['SENTENCE_LENGTH'].mean(),1), '--
 print('number of sentences/posts:', len(df))
 print('number of words:', df['SENTENCE_LENGTH'].sum())
 
+# if we are treating our own assembled corpus, get some numbers on each category
+if save_title == 'fiction4':
+    data['CATEGORY'].value_counts()
+
+    for cat in data['CATEGORY'].unique():
+        print(cat, '--')
+        counts_df = df.loc[data['CATEGORY'] == cat]
+        s_len = counts_df['SENTENCE_LENGTH'].mean()
+        no_words = counts_df['SENTENCE_LENGTH'].sum()
+        lens = len(counts_df)
+        print(cat, 'len data:', lens, 'avg s_len:', s_len, 'no words:', no_words)
+        
+
 # rename columns
 df['avg_visual'] = df['Visual.mean']
 df['avg_haptic'] = df['Haptic.mean']
@@ -76,6 +90,7 @@ if save_title in data_to_normalize:
 
 # %%
 sns.histplot(df['HUMAN'])
+[x for x in df['HUMAN'] if x > 10]
 # %%
 # EXPERIMENT 1
 print('EXPERIMENT 1')
@@ -98,7 +113,7 @@ print('len EXplicit group:', len(explicit_df))
 
 # %%
 # statistics
-measure_list = ['avg_arousal', 'avg_concreteness', 'avg_imageability', 'avg_visual', 'avg_haptic']#, 'avg_interoceptive']#, 'avg_sensorimotor'] # avg_dominance # 'avg_valence', 
+measure_list = ['avg_arousal', 'avg_concreteness', 'avg_imageability', 'avg_visual', 'avg_haptic', 'avg_interoceptive']#, 'avg_interoceptive']#, 'avg_sensorimotor'] # avg_dominance # 'avg_valence', 
 
 # if it is EmoTales, we also have annotations for valence, so use it
 if save_title == 'emotales':
@@ -158,7 +173,7 @@ x = pairwise_boxplots_canon(both_groups, measure_list, category='GROUP', categor
 # %%
 
 # plot the CEDs and do the kolmogorov-smirnov test
-sensorimotor = ['Auditory.mean', 'Gustatory.mean', 'Haptic.mean', 'Interoceptive.mean', 'Olfactory.mean', 'Visual.mean']
+sensorimotor = ['Auditory.mean', 'Gustatory.mean', 'Olfactory.mean']
 
 ced_plot(implicit_df, explicit_df, measure_list, measure_list, save=True, save_title=save_title)
 ced_plot(implicit_df, explicit_df, sensorimotor, sensorimotor, save=True, save_title=save_title + '_sensorimotor')
@@ -171,7 +186,7 @@ histplot_two_groups(implicit_df, explicit_df, measure_list, measure_list, l=28, 
 
 # if there are categories in the data, we want to show each category seperately.
 # categories are in differently named columns, so we use a map
-column_map = {'emobank': 'category','fiction3':'CATEGORY'} #'EmoTales_w_features':'ID', 
+column_map = {'emobank': 'category','fiction3':'CATEGORY', 'fiction4': 'CATEGORY', 'fiction3': 'CATEGORY'} #'EmoTales_w_features':'ID', 
 
 if save_title in column_map.keys():
     categories = df[column_map[save_title]].unique()
@@ -204,25 +219,13 @@ for measure in measure_list:
     print(f'All genres -- {measure} corr w. disagreement')
     x = plotly_viz_correlation_improved(df, measure, 'ROBERTA_HUMAN_DIFF', w=800, h=350, hoverdata_column='SENTENCE', canon_col_name='', color_canon=False, save=False)
 
-# and if there are categories, do it for every category
-# uncomment this to plot
-# if save_title in column_map.keys():
-#     categories = df[column_map[save_title]].unique()
-
-#     for cat in categories:
-#     # we want to check the corr between disagreement and sentence length
-#         cat_df = df.loc[df[column_map[save_title]] == cat]
-#         for measure in measure_list:
-#             print(cat, 'arousal')
-#             x = plotly_viz_correlation_improved(cat_df, measure, 'ROBERTA_HUMAN_DIFF', w=800, h=350, hoverdata_column='SENTENCE', canon_col_name='', color_canon=False, save=False)
-     
 
 # %%
 # we want to try and see if the correlation improves at differente thresholds of sentence length
 # the whole data (not divided into categories)
 # and visualizing it
 thresholds = [0, 5, 10, 15, 20, 25, 30]
-scores_list = ['avg_arousal', 'avg_concreteness', 'avg_imageability']
+scores_list = ['avg_arousal', 'avg_concreteness', 'avg_imageability', 'avg_interoceptive']
 
 # going back to the original (certainly) unfiltered dataframe -- 'data'
 df['HUMAN_NORM'] = normalize(df['HUMAN'], scale_zero_to_ten=False)
@@ -244,6 +247,7 @@ if save_title in column_map:
     category_data_all = {}
 
     for category in categories:
+        print(category)
         category_data_per_threshold = {}
 
         category_df = df.loc[df[column_map[save_title]] == category]
@@ -253,38 +257,34 @@ if save_title in column_map:
 
             # Filter data based on category and threshold
             data_filtered_for_s_len = category_df.loc[category_df['SENTENCE_LENGTH'] > threshold]
+
             # Drop NaNs before correlation
-            data_filtered_for_s_len_dropna = data_filtered_for_s_len.dropna(subset=measure_list)
-            if len(data_filtered_for_s_len_dropna) < 50:
-                print('len of data below 50', category, threshold)
+            data_filtered_for_s_len_dropna = data_filtered_for_s_len.dropna(subset=['ROBERTA_HUMAN_DIFF', 'avg_concreteness', 'avg_arousal', 'avg_imageability'])
 
             measure_results = {}
 
             for measure in measure_list:
                 # Calculate correlation for each measure
-                corr, pval = stats.spearmanr(data_filtered_for_s_len_dropna['ROBERTA_HUMAN_DIFF'], data_filtered_for_s_len_dropna[measure])
-                measure_results[measure] = {'correlation': round(corr, 3), 'p-value': round(pval, 5)}
+                corr = stats.spearmanr(data_filtered_for_s_len_dropna['ROBERTA_HUMAN_DIFF'], data_filtered_for_s_len_dropna[measure])
+                measure_results[measure] = {'correlation': round(corr[0], 3), 'p-value': round(corr[1], 5)}
+                print(category, 'T:', threshold, measure, 'correlation::', round(corr[0], 3), 'p', round(corr[1], 5))
 
-            # Store results
-            category_data_threshold['no_texts'] = len(data_filtered_for_s_len_dropna)
-            category_data_threshold['scores'] = measure_results
-
-            category_data_per_threshold[threshold] = category_data_threshold
-
-        category_data_all[category] = category_data_per_threshold
-
-category_data_all
 # %%
 # We just want the correlation of the whole data with the 5 word sentence threshold
-data_filtered_for_s_len = df.loc[df['SENTENCE_LENGTH'] > 5]
+threshold = 5
+data_filtered_for_s_len = df.loc[df['SENTENCE_LENGTH'] > threshold]
+
+# drop NaNs before correlation
 data_filtered_for_s_len_dropna = data_filtered_for_s_len.dropna(subset=['ROBERTA_HUMAN_DIFF', 'avg_concreteness', 'avg_arousal', 'avg_imageability'])
 print('len data', len(data_filtered_for_s_len_dropna))
-print('correlation of whole data with 5 word threshold')
-for feature in measure_list:
-    correlation_conc = stats.spearmanr(data_filtered_for_s_len_dropna['ROBERTA_HUMAN_DIFF'], data_filtered_for_s_len_dropna[feature])
-    corr_value_conc = round(correlation_conc[0], 3)
-    p_value_conc = round(correlation_conc[1], 5)
-    print('correlation::', feature, corr_value_conc, p_value_conc)
+
+print(f'correlation of whole data with word/sentence threshold of: {threshold}')
+
+for measure in measure_list:
+    correlation_results = stats.spearmanr(data_filtered_for_s_len_dropna['ROBERTA_HUMAN_DIFF'], data_filtered_for_s_len_dropna[measure])
+    corr_value = round(correlation_results[0], 3)
+    p_value = round(correlation_results[1], 5)
+    print('correlation::', measure, corr_value, p_value)
 
 # %%
 # and get the mean, std, median for the features across the categories
@@ -327,5 +327,9 @@ if save_title in column_map:
 # %%
 
 print('All done!')
+
+# %%
+
+df.head()
 
 # %%
