@@ -37,6 +37,7 @@ filtered_cols = ['Auditory.mean',
 #  'Mouth.mean',
 #  'Torso.mean']
 
+# %%
 # 5%
 sensori_dict = {}
 for i, r in sensori.iterrows():
@@ -70,10 +71,10 @@ examples = ['kiss', 'attack', 'hit', 'thought', 'wisdom', 'dog', 'ice', 'unless'
 for ex in examples:
     print(ex, sensori_dict[ex])
 
-
+# %%
 # ok, let's save this as a dictionary
-with open('resources/sensorimotor_norms_dict.json', 'w') as f:
-    json.dump(sensori_dict, f)
+with open('resources/sensorimotor_norms_dict.json', 'r') as f:
+    sensori_dict = json.load(f)
 
 
 # %%
@@ -110,7 +111,7 @@ plot_scatters(overlap, filtered_cols, 'concreteness', 'lightseagreen', 40, 6, hu
 # %%
 from functions import plotly_viz_correlation_improved
 
-x = plotly_viz_correlation_improved(overlap, 'concreteness', 'Visual.mean', w=1000, h=650, hoverdata_column='word', canon_col_name='', canons=False, color_canon=False, save=True)
+x = plotly_viz_correlation_improved(overlap, 'concreteness', 'Interoceptive.mean', w=1000, h=650, hoverdata_column='word', canon_col_name='', color_canon=False, save=True)
 
 # %%
 x = plotly_viz_correlation_improved(overlap, 'concreteness', 'Gustatory.mean', w=1000, h=650, hoverdata_column='word', canon_col_name='', canons=False, color_canon=False, save=True)

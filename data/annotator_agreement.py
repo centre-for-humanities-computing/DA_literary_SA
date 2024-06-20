@@ -20,8 +20,6 @@ df.head()
 
 # %%
 
-df['ANNOTATOR_3'] = df['ANNOTATOR_3'].fillna(5)
-
 nan_counts = df.isna().sum()
 print("NaN counts per column:")
 print(nan_counts)
@@ -34,7 +32,7 @@ print(nan_rows_annotators)
 # %%
 yuri_listed = df['ANNOTATOR_3']
 [x for x in yuri_listed if x > 10]
-df['ANNOTATOR_3'] = df['ANNOTATOR_3'].replace(56, 5)
+#df['ANNOTATOR_3'] = df['ANNOTATOR_3'].replace(56, 5)
 [x for x in df['ANNOTATOR_3'] if x > 10]
 
 

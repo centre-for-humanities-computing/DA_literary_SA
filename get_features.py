@@ -7,7 +7,7 @@ from functions import *
 
 # %%
 # set input path for data
-input_path = 'data/fiction3_data.json'
+input_path = 'data/fiction4_data.json'
 title = input_path.split('/')[1].split('_')[0]
 print('data treated:', title.upper())
 # texts should contain sentences and SA annotated scores
@@ -193,6 +193,7 @@ print('# PART 2: sentiment analysis')
 
 xlm_model = pipeline(model="cardiffnlp/twitter-xlm-roberta-base-sentiment")
 
+
 # %%
 #
 if title in datasets_english: # make sure we're using the english sentence (also for Danish texts)
@@ -230,9 +231,97 @@ df['vader'] = vader_scores
 df.head()
 
 # %%
+# Check for nan values
+
+nan_counts = df.isna().sum()
+print("NaN counts per column:")
+print(nan_counts)
+
+nan_rows_annotators = df[df[['HUMAN', 'tr_xlm_roberta']].isna().any(axis=1)]
+print("Rows with NaN values in SA columns:")
+print(nan_rows_annotators)
+
+# %%
 # dump to json
-with open(f'{input_path}', 'w') as f:
+#with open(f'{input_path}', 'w') as f:
+with open('fiction4_20june.json', 'w') as f:
     json.dump(df.to_dict(), f)
 # %%
 print(f'treated {title.upper()}: \n VAD, concreteness, sensorimotor and imageability calculated \n -- json updated!')
+
+
+
+# %% 
+# We want to get the correlation between RoBERTa and Humans for each of our datasets
+# %%
+# get the overall correlation between human/vader
+correlation_results = stats.spearmanr(df['tr_xlm_roberta'], df['HUMAN'])
+corr_value = round(correlation_results[0], 3)
+p_value = round(correlation_results[1], 5)
+print('correlation, human vs roberta (all on ENGLISH):', corr_value, p_value)
+
+
+# %%
+# for the datasets that have different categories, we want to check the correlation for each category with the human mean
+map_categories = {'emobank': 'category', 'fiction4': 'CATEGORY'}
+
+if title in map_categories:
+    for cat in df[map_categories[title]].unique():
+        dat = df.loc[df[map_categories[title]] == cat]
+
+        correlation_results = stats.spearmanr(dat['tr_xlm_roberta'], dat['HUMAN'])
+        corr_value = round(correlation_results[0], 3)
+        p_value = round(correlation_results[1], 5)
+        print(f'correlation, human vs roberta for cat: {cat}', corr_value, p_value)
+
+
+
+# %%
+# for the bilingual dataset, check the difference between applying roberta in each language
+if title == 'fiction4':
+
+    # make two groups based on original language
+    dk_data = df.loc[(df['CATEGORY'] == 'hymns') | (df['CATEGORY'] == 'fairy tales')]
+    print(len(dk_data))
+    en_data = df.loc[(df['CATEGORY'] == 'prose') | (df['CATEGORY'] == 'poetry')]
+    print(len(en_data))
+
+    # first print the correlation of the SA on English translations (already computed)
+    # just isolating the originally danish texts
+    correlation_results = stats.spearmanr(dk_data['tr_xlm_roberta'], dk_data['HUMAN'])
+    corr_value = round(correlation_results[0], 3)
+    p_value = round(correlation_results[1], 5)
+    print('correlation, human vs roberta DANISH texts but SA on ENGLISH translations:', corr_value, p_value)
+
+    # and we print the correlation between human/roberta for the originally english texts
+    correlation_results = stats.spearmanr(en_data['tr_xlm_roberta'], en_data['HUMAN'])
+    corr_value = round(correlation_results[0], 3)
+    p_value = round(correlation_results[1], 5)
+    print('correlation, human vs roberta (SA on original ENGLISH fiction4):', corr_value, p_value)
+
+    # then we want to redo the roberta values directly on the danish texts
+    xlm_labels = []
+    xlm_scores = []
+
+    for s in dk_data['SENTENCE']:
+        # Join to string if list
+        if isinstance(s, list):
+            s = " ".join(s)
+        # get sent-label & confidence to transform to continuous
+        sent = xlm_model(s)
+        xlm_labels.append(sent[0].get("label"))
+        xlm_scores.append(sent[0].get("score"))
+
+    # function defined in functions to transform score to continuous
+    xlm_converted_scores = conv_scores(xlm_labels, xlm_scores, ["positive", "neutral", "negative"])
+    dk_data["tr_xlm_roberta"] = xlm_converted_scores
+
+    correlation_results = stats.spearmanr(dk_data['tr_xlm_roberta'], dk_data['HUMAN'])
+    corr_value = round(correlation_results[0], 3)
+    p_value = round(correlation_results[1], 5)
+    print('correlation, human vs roberta (SA on DANISH fiction4):', corr_value, p_value)
+
+
+
+
 # %%
